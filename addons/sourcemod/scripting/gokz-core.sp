@@ -56,6 +56,7 @@ ConVar gCV_sv_full_alltalk;
 #include "gokz-core/triggerfix.sp"
 #include "gokz-core/demofix.sp"
 #include "gokz-core/teamnumfix.sp"
+#include "gokz-core/nav.sp"
 
 #include "gokz-core/map/buttons.sp"
 #include "gokz-core/map/triggers.sp"
@@ -321,6 +322,7 @@ public void GOKZ_OnJoinTeam(int client, int team)
 
 public void OnMapStart()
 {
+	OnMapStart_Nav();
 	OnMapStart_MapTriggers();
 	OnMapStart_KZConfig();
 	OnMapStart_Options();
