@@ -425,6 +425,18 @@
 		"chi"		"地图排行\n \n地图 - {1}\n \n选择模式"
 		"ru"		"Топ карты\n \nКарта - {1}\n \nВыбрать режим"
 	}
+	"Map Top Mode Menu - Title (Replays)"
+	{
+		// Replays
+		//
+		// Map - kz_map
+		//
+		// Select a Mode
+		"#format"	"{1:s}"
+		"en"		"Replays\n \nMap - {1}\n \nSelect a Mode"
+		"chi"		"录像\n \n地图 - {1}\n \n选择模式"
+		"ru"		"Повторы\n \nКарта - {1}\n \nВыбрать режим"
+	}
 	"Map Top Mode Menu - Title (Bonus)"
 	{
 		// Bonus Top
@@ -436,6 +448,18 @@
 		"en"		"Bonus Top\n \nMap - {1} (Bonus {2})\n \nSelect a Mode"
 		"chi"		"奖励关排行\n \n地图 - {1} (奖励关 {2})\n \n选择地图"
 		"ru"		"Топ бонуса\n \nКарта - {1} (Бонус {2})\n \nВыбрать режим"
+	}
+	"Map Top Mode Menu - Title (Bonus) (Replays)"
+	{
+		// Bonus Replays
+		//
+		// Map - kz_map (Bonus 1)
+		//
+		// Select a Mode
+		"#format"	"{1:s},{2:d}"
+		"en"		"Bonus Replays\n \nMap - {1} (Bonus {2})\n \nSelect a Mode"
+		"chi"		"奖励关录像\n \n地图 - {1} (奖励关 {2})\n \n选择模式"
+		"ru"		"Повторы бонуса\n \nКарта - {1} (Бонус {2})\n \nВыбрать режим"
 	}
 	"Map Top Menu - Title"
 	{
@@ -449,6 +473,18 @@
 		"chi"		"地图排行\n \n地图 - {1}\n模式 - {2}\n "
 		"ru"		"Топ карты\n \nКарта - {1}\nРежим - {2}\n "
 	}
+	"Map Top Menu - Title (Replays)"
+	{
+		// Replays
+		//
+		// Map - kz_map
+		// Mode - Vanilla
+		//
+		"#format"	"{1:s},{2:s}"
+		"en"		"Replays\n \nMap - {1}\nMode - {2}\n "
+		"chi"		"录像\n \n地图 - {1}\n模式 - {2}\n "
+		"ru"		"Повторы\n \nКарта - {1}\nРежим - {2}\n "
+	}
 	"Map Top Menu - Title (Bonus)"
 	{
 		// Bonus Top
@@ -460,6 +496,18 @@
 		"en"		"Bonus Top\n \nMap - {1} (Bonus {2})\nMode - {3}\n "
 		"chi"		"加成阶层排行\n \n地图 - {1} (加成{2}阶)\n模式 - {3}\n "
 		"ru"		"Топ бонуса\n \nКарта - {1} (Бонус {2})\nРежим - {3}\n "
+	}
+	"Map Top Menu - Title (Bonus) (Replays)"
+	{
+		// Bonus Replays
+		//
+		// Map - kz_map (Bonus 1)
+		// Mode - Vanilla
+		//
+		"#format"	"{1:s},{2:d},{3:s}"
+		"en"		"Bonus Replays\n \nMap - {1} (Bonus {2})\nMode - {3}\n "
+		"chi"		"加成阶层录像\n \n地图 - {1} (加成{2}阶)\n模式 - {3}\n "
+		"ru"		"Повторы бонуса\n \nКарта - {1} (Бонус {2})\nРежим - {3}\n "
 	}
 	"Map Top Menu - Top"
 	{
@@ -489,6 +537,18 @@
 		"chi"		"服务器 {2} 前{1}\n \n地图- {3}\n模式 - {4}\n "
 		"ru"		"Топ {1} сервера {2} времени\n \nКарта - {3}\nРежим - {4}\n "
 	}
+	"Map Top Submenu - Title (Replays)"
+	{
+		// Server Top 20 PRO Times
+		//
+		// Map - kz_map
+		// Mode - Vanilla
+		//
+		"#format"	"{1:d},{2:s},{3:s},{4:s}"
+		"en"		"Server Top {1} {2} Replays\n \nMap - {3}\nMode - {4}\n "
+		"chi"		"服务器 {2} 前{1}录像\n \n地图 - {3}\n模式 - {4}\n "
+		"ru"		"Топ {1} сервера {2} повторов\n \nКарта - {3}\nРежим - {4}\n "
+	}
 	"Map Top Submenu - Title (Bonus)"
 	{
 		// Server Top 20 PRO Times
@@ -500,6 +560,18 @@
 		"en"		"Server Top {1} {2} Times\n \nMap - {3} (Bonus {4})\nMode - {5}\n "
 		"chi"		"服务器 {2} 前{1}\n \n地图 - {3} (加成{4}阶)\n模式 - {5}\n "
 		"ru"		"Топ {1} сервера {2} времени\n \nКарта - {3} (Бонус {4})\nРежим - {5}\n "
+	}
+	"Map Top Submenu - Title (Bonus) (Replays)"
+	{
+		// Server Top 20 PRO Times
+		//
+		// Map - kz_map (Bonus 1)
+		// Mode - Vanilla
+		//
+		"#format"	"{1:d},{2:s},{3:s},{4:d},{5:s}"
+		"en"		"Server Top {1} {2} Replays\n \nMap - {3} (Bonus {4})\nMode - {5}\n "
+		"chi"		"服务器 {2} 前{1}录像\n \n地图 - {3} (加成{4}阶)\n模式 - {5}\n "
+		"ru"		"Топ {1} сервера {2} повторов\n \nКарта - {3} (Бонус {4})\nРежим - {5}\n "
 	}
 
 
