@@ -59,7 +59,7 @@ public Action CommandReplay(int client, int args)
 
 	if (args == 0)
 	{  // Open map top for current map
-		DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), 0);
+		DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), 0, true);
 	}
 	else if (args == 1)
 	{  // Open specified Bonus # top for current map
@@ -68,7 +68,7 @@ public Action CommandReplay(int client, int args)
 		int bonus;
 		if (StringToIntEx(argBonus, bonus) > 0 && GOKZ_IsValidCourse(bonus, false))
 		{
-			DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), bonus);
+			DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), bonus, true);
 		}
 		else
 		{
@@ -152,7 +152,7 @@ public Action CommandMapTop(int client, int args)
 
 	if (args == 0)
 	{  // Open map top for current map
-		DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), 0);
+		DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), 0, false);
 	}
 	else if (args >= 1)
 	{  // Open map top for specified map
@@ -172,7 +172,7 @@ public Action CommandBMapTop(int client, int args)
 
 	if (args == 0)
 	{  // Open Bonus 1 top for current map
-		DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), 1);
+		DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), 1, false);
 	}
 	else if (args == 1)
 	{  // Open specified Bonus # top for current map
@@ -181,7 +181,7 @@ public Action CommandBMapTop(int client, int args)
 		int bonus = StringToInt(argBonus);
 		if (GOKZ_IsValidCourse(bonus, true))
 		{
-			DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), bonus);
+			DB_OpenMapTopModeMenu(client, GOKZ_DB_GetCurrentMapID(), bonus, false);
 		}
 		else
 		{
