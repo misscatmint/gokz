@@ -1490,11 +1490,7 @@ static void MakePlayerSpectate(int client, int bot)
 	GOKZ_JoinTeam(client, CS_TEAM_SPECTATOR);
 	SetEntProp(client, Prop_Send, "m_iObserverMode", 4);
 	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", bot);
-		
-	int clientUserID = GetClientUserId(client);
-	DataPack data = new DataPack();
-	data.WriteCell(clientUserID);
-	data.WriteCell(GetClientUserId(bot));
+	
 	CreateTimer(0.1, Timer_UpdateBotName, GetClientUserId(bot));
 	EnableReplayControls(client);
 }
