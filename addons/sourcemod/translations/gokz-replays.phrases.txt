@@ -123,6 +123,10 @@
 		"chi"		"自由视角"
 		"ru"		"Свободная камера"
 	}
+	"Replay Controls - Back To Bot"
+	{
+		"en"		"Back to bot"
+	}
 	"Replay Controls - Exit"
 	{
 		"en"		"Exit"
