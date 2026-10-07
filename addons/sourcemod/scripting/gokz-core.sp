@@ -150,6 +150,7 @@ public void OnClientPutInServer(int client)
 	OnClientPutInServer_VirtualButtons(client);
 	OnClientPutInServer_Options(client);
 	OnClientPutInServer_MapTriggers(client);
+	OnClientPutInServer_MapZones(client);
 	OnClientPutInServer_Triggerfix(client);
 	OnClientPutInServer_Noclip(client);
 	OnClientPutInServer_Turnbinds(client);
@@ -257,6 +258,7 @@ public void Hook_PlayerSpawnPost(int client)
 public void Hook_PlayerPostThink(int client)
 {
 	Hook_PlayerPostThink_Triggerfix(client);
+	Hook_PlayerPostThink_MapZones(client); // After triggerfix, which can touch start zones
 }
 
 public void Hook_PlayerPostThinkPost(int client)
