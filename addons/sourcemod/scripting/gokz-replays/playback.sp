@@ -229,6 +229,13 @@ void TrySkipToTime(int client, int seconds)
 		return;
 	}
 	
+	if (GetReplayBotController(bot) != client)
+	{
+		GOKZ_PrintToChat(client, true, "%t", "Replay Controls - Not Controlling Bot");
+		GOKZ_PlayErrorSound(client);
+		return;
+	}
+	
 	int tick = seconds * 128 + preAndPostRunTickCount;
 	if (tick >= 0 && tick < playbackTickData[bot].Length)
 	{

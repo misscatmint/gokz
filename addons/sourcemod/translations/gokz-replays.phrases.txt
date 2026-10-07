@@ -134,4 +134,8 @@
 	{
 		"en"		"{red}You are not spectating a replay bot!"
 	}
+	"Replay Controls - Not Controlling Bot"
+	{
+		"en"		"{red}You are not controlling this replay bot! Use !rpcontrols to take control."
+	}
 }
