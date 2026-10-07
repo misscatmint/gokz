@@ -21,6 +21,14 @@
 		"chi"		"{darkred}当前没有可用的回放机器人."
 		"ru"		"{darkred}В настоящее время нет доступных ботов воспроизведения."
 	}
+	"Bot Add Failed"
+	{
+		"en"		"{red}Failed to add a replay bot."
+	}
+	"Server Full"
+	{
+		"en"		"{red}The server is full, so no replay bot can be added!"
+	}
 	"No Replay Found"
 	{
 		"en"		"{red}No replay found!"

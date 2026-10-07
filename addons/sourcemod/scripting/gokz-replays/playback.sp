@@ -94,14 +94,32 @@ int LoadReplayBot(int client, char[] path)
 		return -1;
 	}
 
+	if (GetClientCount(false) >= MaxClients)
+	{
+		GOKZ_PrintToChat(client, true, "%t", "Server Full");
+		GOKZ_PlayErrorSound(client);
+		return -1;
+	}
+
 	if (!LoadPlayback(client, bot, path))
 	{
 		GOKZ_PlayErrorSound(client);
 		return -1;
 	}
 	
-	ServerCommand("bot_add");
 	botCallerUserId[bot] = GetClientUserId(client);
+	// bot_add joins the bot synchronously once executed, so flushing the command
+	// buffer lets it claim this slot before another request can pick it.
+	ServerCommand("bot_add");
+	ServerExecute();
+	if (!botInGame[bot])
+	{
+		botCallerUserId[bot] = 0;
+		LogError("bot_add did not add a replay bot.");
+		GOKZ_PrintToChat(client, true, "%t", "Bot Add Failed");
+		GOKZ_PlayErrorSound(client);
+		return -1;
+	}
 	return botClient[bot];
 }
 
@@ -321,8 +339,6 @@ void OnClientPutInServer_Playback(int client)
 			{
 				MakePlayerSpectate(caller, bot);
 			}
-			// Reset even if the caller left, or the next unrelated bot to join
-			// would be claimed for this slot.
 			botCallerUserId[bot] = 0;
 			break;
 		}
