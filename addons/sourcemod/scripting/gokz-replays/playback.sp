@@ -226,9 +226,15 @@ void TrySkipToTime(int client, int seconds)
 		return;
 	}
 	
-	int tick = seconds * 128 + preAndPostRunTickCount;
 	int bot = GetBotFromClient(GetObserverTarget(client));
+	if (bot == -1)
+	{
+		GOKZ_PrintToChat(client, true, "%t", "Replay Controls - Not Spectating Bot");
+		GOKZ_PlayErrorSound(client);
+		return;
+	}
 	
+	int tick = seconds * 128 + preAndPostRunTickCount;
 	if (tick >= 0 && tick < playbackTickData[bot].Length)
 	{
 		PlaybackSkipToTick(bot, tick);
