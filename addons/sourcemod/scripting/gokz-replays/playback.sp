@@ -20,6 +20,8 @@ static int botCallerUserId[RP_MAX_BOTS];
 // Original bot name after creation by bot_add, needed for bot removal
 static char botName[RP_MAX_BOTS][MAX_NAME_LENGTH];
 static bool botInGame[RP_MAX_BOTS];
+// Freecam has no target, so the last replay bot each player spectated stands in for it
+static int lastSpectatedBot[MAXPLAYERS + 1];
 static int botClient[RP_MAX_BOTS];
 static bool botDataLoaded[RP_MAX_BOTS];
 static int botReplayType[RP_MAX_BOTS];
@@ -155,6 +157,30 @@ void GetPlaybackState(int client, HUDInfo info)
 	info.CurrentTeleport = botCurrentTeleport[bot];
 }
 
+// Returns the replay bot slot the client is spectating, or -1. In freecam, this
+// is the last replay bot they spectated.
+int GetWatchedBot(int client)
+{
+	if (GetObserverMode(client) == ObsMode_Roaming)
+	{
+		return lastSpectatedBot[client];
+	}
+	return GetBotFromClient(GetObserverTarget(client));
+}
+
+// Whether any player is spectating the replay bot, including in freecam.
+bool IsReplayBotWatched(int bot)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsValidClient(client) && !IsFakeClient(client) && GetWatchedBot(client) == bot)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 int GetClientFromBot(int bot)
 {
 	return botClient[bot];
@@ -272,6 +298,8 @@ float GetPlaybackTime(int bot)
 
 void OnClientPutInServer_Playback(int client)
 {
+	lastSpectatedBot[client] = -1;
+	
 	if (!IsFakeClient(client) || IsClientSourceTV(client))
 	{
 		return;
@@ -311,7 +339,15 @@ void OnClientDisconnect_Playback(int client)
 		}
 		
 		botInGame[bot] = false;
+		// Controls needs to see who is still watching the bot before that's cleared.
 		OnBotDisconnect_ReplayControls(bot);
+		for (int spec = 1; spec <= MaxClients; spec++)
+		{
+			if (lastSpectatedBot[spec] == bot)
+			{
+				lastSpectatedBot[spec] = -1;
+			}
+		}
 		if (playbackTickData[bot] != null)
 		{
 			playbackTickData[bot].Clear(); // Clear it all out
@@ -346,6 +382,11 @@ void OnPlayerRunCmd_Playback(int client, int &buttons, float vel[3], float angle
 
 void OnPlayerRunCmdPost_Playback(int client)
 {
+	if (!IsFakeClient(client) && GetObserverMode(client) != ObsMode_Roaming)
+	{
+		lastSpectatedBot[client] = GetBotFromClient(GetObserverTarget(client));
+	}
+	
 	for (int bot; bot < RP_MAX_BOTS; bot++)
 	{
 		// Check if not the bot we're looking for
@@ -789,16 +830,7 @@ static void PlaybackVersion1(int client, int bot, int &buttons)
 	}
 	else
 	{
-		// Check whether somebody is actually spectating the bot
-		int spec;
-		for (spec = 1; spec < MAXPLAYERS + 1; spec++)
-		{
-			if (IsValidClient(spec) && GetObserverTarget(spec) == botClient[bot])
-			{
-				break;
-			}
-		}
-		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot))
+		if (!IsReplayBotWatched(bot))
 		{
 			playbackTickData[bot].Clear();
 			botDataLoaded[bot] = false;
@@ -953,16 +985,7 @@ void PlaybackVersion2(int client, int bot, int &buttons, float vel[3], float ang
 	}
 	else
 	{
-		// Check whether somebody is actually spectating the bot
-		int spec;
-		for (spec = 1; spec < MAXPLAYERS + 1; spec++)
-		{
-			if (IsValidClient(spec) && GetObserverTarget(spec) == botClient[bot])
-			{
-				break;
-			}
-		}
-		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot))
+		if (!IsReplayBotWatched(bot))
 		{
 			playbackTickData[bot].Clear();
 			botDataLoaded[bot] = false;

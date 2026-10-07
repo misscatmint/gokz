@@ -64,12 +64,6 @@ void OnOptionChanged_ReplayControls(int client, const char[] option, any newValu
 
 // =====[ PUBLIC ]=====
 
-// Returns the replay bot slot the client is spectating, or -1.
-int GetWatchedBot(int client)
-{
-	return GetBotFromClient(GetObserverTarget(client));
-}
-
 // Returns the client controlling the replay bot, or 0.
 int GetReplayBotController(int bot)
 {
@@ -77,13 +71,10 @@ int GetReplayBotController(int bot)
 }
 
 // Whether the bot's controller is currently watching it.
-bool IsReplayBotControlled(int bot)
+static bool IsReplayBotControlled(int bot)
 {
 	int controller = GetReplayBotController(bot);
-	// Freecam has no target, so a controller in freecam counts as watching.
-	return controller != 0 &&
-		(GetWatchedBot(controller) == bot ||
-		GetEntProp(controller, Prop_Send, "m_iObserverMode") == 6);
+	return controller != 0 && GetWatchedBot(controller) == bot;
 }
 
 bool UpdateReplayControlMenu(int client)
