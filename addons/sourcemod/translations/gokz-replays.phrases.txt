@@ -126,6 +126,10 @@
 		"chi"		"{red}无效的计时."
 		"ru"		"{red}Неправильное время."
 	}
+	"Replay Controls - Bot Controlled"
+	{
+		"en"		"{red}Another player is controlling this replay bot!"
+	}
 	"Replay Controls - Not Spectating Bot"
 	{
 		"en"		"{red}You are not spectating a replay bot!"
