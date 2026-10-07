@@ -106,12 +106,11 @@ int LoadReplayBot(int client, char[] path)
 // Passes the current state of the replay into the HUDInfo struct
 void GetPlaybackState(int client, HUDInfo info)
 {
-	int bot, i;
-	for(i = 0; i < RP_MAX_BOTS; i++)
+	int bot = GetBotFromClient(client);
+	if (bot == -1)
 	{
-		bot = botClient[i] == client ? i : bot;
+		return;
 	}
-	if (i == RP_MAX_BOTS + 1) return;
 	
 	if (playbackTickData[bot] == INVALID_HANDLE)
 	{
@@ -154,6 +153,11 @@ void GetPlaybackState(int client, HUDInfo info)
 	info.TakeoffSpeed = botTakeoffSpeed[bot];
 	info.IsTakeoff = botIsTakeoff[bot] && !Movement_GetOnGround(client);
 	info.CurrentTeleport = botCurrentTeleport[bot];
+}
+
+int GetClientFromBot(int bot)
+{
+	return botClient[bot];
 }
 
 int GetBotFromClient(int client)
