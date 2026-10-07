@@ -172,11 +172,6 @@ int GetBotFromClient(int client)
 	return -1;
 }
 
-bool InBreather(int bot)
-{
-	return inBreather[bot];
-}
-
 bool PlaybackPaused(int bot)
 {
 	return botPlaybackPaused[bot];
@@ -226,7 +221,7 @@ void TrySkipToTime(int client, int seconds)
 		return;
 	}
 	
-	int bot = GetBotFromClient(GetObserverTarget(client));
+	int bot = GetWatchedBot(client);
 	if (bot == -1)
 	{
 		GOKZ_PrintToChat(client, true, "%t", "Replay Controls - Not Spectating Bot");
@@ -289,7 +284,7 @@ void OnClientPutInServer_Playback(int client)
 			int caller = GetClientOfUserId(botCallerUserId[bot]);
 			if (IsValidClient(caller))
 			{
-				MakePlayerSpectate(caller, botClient[bot]);
+				MakePlayerSpectate(caller, bot);
 			}
 			// Reset even if the caller left, or the next unrelated bot to join
 			// would be claimed for this slot.
@@ -309,6 +304,7 @@ void OnClientDisconnect_Playback(int client)
 		}
 		
 		botInGame[bot] = false;
+		OnBotDisconnect_ReplayControls(bot);
 		if (playbackTickData[bot] != null)
 		{
 			playbackTickData[bot].Clear(); // Clear it all out
@@ -780,7 +776,6 @@ static void PlaybackVersion1(int client, int bot, int &buttons)
 			{
 				playbackTickData[bot].Clear(); // Clear it all out
 				botDataLoaded[bot] = false;
-				CancelReplayControlsForBot(bot);
 				ServerCommand("bot_kick %s", botName[bot]);
 			}
 		}
@@ -796,11 +791,10 @@ static void PlaybackVersion1(int client, int bot, int &buttons)
 				break;
 			}
 		}
-		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot, botClient[bot]))
+		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot))
 		{
 			playbackTickData[bot].Clear();
 			botDataLoaded[bot] = false;
-			CancelReplayControlsForBot(bot);
 			ServerCommand("bot_kick %s", botName[bot]);
 			return;
 		}
@@ -946,7 +940,6 @@ void PlaybackVersion2(int client, int bot, int &buttons, float vel[3], float ang
 			{
 				playbackTickData[bot].Clear(); // Clear it all out
 				botDataLoaded[bot] = false;
-				CancelReplayControlsForBot(bot);
 				ServerCommand("bot_kick %s", botName[bot]);
 			}
 		}
@@ -962,11 +955,10 @@ void PlaybackVersion2(int client, int bot, int &buttons, float vel[3], float ang
 				break;
 			}
 		}
-		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot, botClient[bot]))
+		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot))
 		{
 			playbackTickData[bot].Clear();
 			botDataLoaded[bot] = false;
-			CancelReplayControlsForBot(bot);
 			ServerCommand("bot_kick %s", botName[bot]);
 			return;
 		}
@@ -1503,10 +1495,10 @@ static void MakePlayerSpectate(int client, int bot)
 {
 	GOKZ_JoinTeam(client, CS_TEAM_SPECTATOR);
 	SetEntProp(client, Prop_Send, "m_iObserverMode", 4);
-	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", bot);
+	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", botClient[bot]);
 	
-	CreateTimer(0.1, Timer_UpdateBotName, GetClientUserId(bot));
-	EnableReplayControls(client);
+	CreateTimer(0.1, Timer_UpdateBotName, GetClientUserId(botClient[bot]));
+	OnBotJoined_ReplayControls(client, bot);
 }
 
 public Action Timer_UpdateBotName(Handle timer, int botUID)
