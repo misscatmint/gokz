@@ -10,9 +10,11 @@
 #define ITEM_INFO_SKIP "skip"
 #define ITEM_INFO_REWIND "rewind"
 #define ITEM_INFO_FREECAM "freecam"
+#define ITEM_INFO_BACK_TO_BOT "backtobot"
 
 static int controllingUserId[RP_MAX_BOTS];
 static int botTeleports[RP_MAX_BOTS];
+static bool menuDrawnInFreecam[MAXPLAYERS + 1];
 
 
 
@@ -94,7 +96,10 @@ bool UpdateReplayControlMenu(int client)
 	if (GetClientMenu(client) == MenuSource_None || 
 		GOKZ_HUD_GetMenuShowing(client) && GetClientAvgLoss(client, NetFlow_Both) > EPSILON || 
 		GOKZ_HUD_GetMenuShowing(client) && GOKZ_HUD_GetOption(client, HUDOption_TimerText) == TimerText_TPMenu ||
-		GOKZ_HUD_GetMenuShowing(client) && PlaybackGetTeleports(bot) > 0)
+		GOKZ_HUD_GetMenuShowing(client) && PlaybackGetTeleports(bot) > 0 ||
+		// The last item depends on freecam, and nothing else redraws the menu when
+		// only that changes, such as entering freecam with the spectator mode key.
+		GOKZ_HUD_GetMenuShowing(client) && menuDrawnInFreecam[client] != (GetObserverMode(client) == ObsMode_Roaming))
 	{
 		botTeleports[bot] = PlaybackGetTeleports(bot);
 		ShowReplayControlMenu(client, bot);
@@ -159,8 +164,19 @@ void ShowReplayControlMenu(int client, int bot)
 	FormatEx(text, sizeof(text), "%T\n ", "Replay Controls - Rewind", client);
 	menu.AddItem(ITEM_INFO_REWIND, text);
 	
-	FormatEx(text, sizeof(text), "%T", "Replay Controls - Freecam", client);
-	menu.AddItem(ITEM_INFO_FREECAM, text);
+	// Leaving freecam with the spectator mode key doesn't necessarily land on the
+	// bot, so freecam offers a way straight back instead.
+	menuDrawnInFreecam[client] = GetObserverMode(client) == ObsMode_Roaming;
+	if (menuDrawnInFreecam[client])
+	{
+		FormatEx(text, sizeof(text), "%T", "Replay Controls - Back To Bot", client);
+		menu.AddItem(ITEM_INFO_BACK_TO_BOT, text);
+	}
+	else
+	{
+		FormatEx(text, sizeof(text), "%T", "Replay Controls - Freecam", client);
+		menu.AddItem(ITEM_INFO_FREECAM, text);
+	}
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 
@@ -241,6 +257,10 @@ int MenuHandler_ReplayControls(Menu menu, MenuAction action, int param1, int par
 			else if (StrEqual(info, ITEM_INFO_FREECAM, false))
 			{
 				SetEntProp(param1, Prop_Send, "m_iObserverMode", 6);
+			}
+			else if (StrEqual(info, ITEM_INFO_BACK_TO_BOT, false))
+			{
+				SpectateBot(param1, bot);
 			}
 			GOKZ_HUD_SetMenuShowing(param1, false);
 		}

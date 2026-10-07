@@ -338,6 +338,7 @@ void OnClientPutInServer_Playback(int client)
 			if (IsValidClient(caller))
 			{
 				MakePlayerSpectate(caller, bot);
+				OnBotJoined_ReplayControls(caller, bot);
 			}
 			botCallerUserId[bot] = 0;
 			break;
@@ -1540,11 +1541,15 @@ static bool IsCurrentWeaponSecondary(int client)
 static void MakePlayerSpectate(int client, int bot)
 {
 	GOKZ_JoinTeam(client, CS_TEAM_SPECTATOR);
+	SpectateBot(client, bot);
+}
+
+void SpectateBot(int client, int bot)
+{
 	SetEntProp(client, Prop_Send, "m_iObserverMode", 4);
 	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", botClient[bot]);
 	
 	CreateTimer(0.1, Timer_UpdateBotName, GetClientUserId(botClient[bot]));
-	OnBotJoined_ReplayControls(client, bot);
 }
 
 public Action Timer_UpdateBotName(Handle timer, int botUID)
