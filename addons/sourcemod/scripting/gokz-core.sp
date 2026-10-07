@@ -165,6 +165,7 @@ public void OnClientDisconnect(int client)
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
+	OnPlayerRunCmd_MapZones(client); // First, before anything reads the timer
 	gI_CmdNum[client] = cmdnum;
 	gI_TickCount[client] = tickcount;
 	OnPlayerRunCmd_Triggerfix(client);

@@ -15,6 +15,8 @@ static Regex RE_BonusStartZone;
 static Regex RE_BonusEndZone;
 static bool touchedGroundSinceTouchingStartZone[MAXPLAYERS + 1];
 static ArrayList touchedStartZones[MAXPLAYERS + 1];
+// Deferred so the command that leaves the zone isn't timed.
+static int pendingStartCourse[MAXPLAYERS + 1] = { -1, ... };
 
 
 
@@ -36,6 +38,7 @@ void OnClientPutInServer_MapZones(int client)
 	{
 		touchedStartZones[client].Clear();
 	}
+	pendingStartCourse[client] = -1;
 }
 
 // The engine fires EndTouch once per frame, after all of the frame's commands.
@@ -68,7 +71,10 @@ void Hook_PlayerPostThink_MapZones(int client)
 		{
 			zone.exitHandled = true;
 			touchedStartZones[client].SetArray(i, zone);
-			ProcessStartZoneEndTouch(client, zone.course);
+			if (pendingStartCourse[client] == -1)
+			{
+				pendingStartCourse[client] = zone.course;
+			}
 		}
 		else if (zone.exitHandled && inside)
 		{
@@ -78,6 +84,11 @@ void Hook_PlayerPostThink_MapZones(int client)
 			ProcessStartZoneStartTouch(client, zone.course);
 		}
 	}
+}
+
+void OnPlayerRunCmd_MapZones(int client)
+{
+	ProcessPendingStart(client);
 }
 
 void OnStartTouchGround_MapZones(int client)
@@ -143,6 +154,8 @@ public void OnStartZoneEndTouch(const char[] name, int caller, int activator, fl
 		return;
 	}
 
+	ProcessPendingStart(activator);
+
 	if (ShouldProcessEngineEndTouch(activator, caller))
 	{
 		ProcessStartZoneEndTouch(activator, 0);
@@ -182,6 +195,8 @@ public void OnBonusStartZoneEndTouch(const char[] name, int caller, int activato
 	{
 		return;
 	}
+
+	ProcessPendingStart(activator);
 
 	int course = GetStartZoneBonusNumber(caller);
 	if (!GOKZ_IsValidCourse(course, true))
@@ -229,6 +244,15 @@ static void TrackStartZone(int client, int entity, int course)
 	zone.entRef = entRef;
 	zone.course = course;
 	touchedStartZones[client].PushArray(zone);
+}
+
+static void ProcessPendingStart(int client)
+{
+	if (pendingStartCourse[client] != -1)
+	{
+		ProcessStartZoneEndTouch(client, pendingStartCourse[client]);
+		pendingStartCourse[client] = -1;
+	}
 }
 
 // Returns whether the engine's EndTouch still needs processing.
