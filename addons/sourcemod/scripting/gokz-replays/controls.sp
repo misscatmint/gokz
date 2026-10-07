@@ -79,7 +79,7 @@ void ShowReplayControlMenu(int client, int bot)
 			GOKZ_HUD_GetOption(client, HUDOption_SpecListPosition) == SpecListPosition_TPMenu)
 		{
 			HUDInfo info;
-			GetPlaybackState(client, info);
+			GetPlaybackState(GetClientFromBot(bot), info);
 			GOKZ_HUD_GetMenuSpectatorText(client, info, text, sizeof(text));
 		}
 		if (GOKZ_HUD_GetOption(client, HUDOption_TimerText) == TimerText_TPMenu)
