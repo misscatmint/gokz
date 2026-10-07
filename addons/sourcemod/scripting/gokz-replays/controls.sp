@@ -7,7 +7,7 @@
 #define ITEM_INFO_REWIND "rewind"
 #define ITEM_INFO_FREECAM "freecam"
 
-static int controllingPlayer[RP_MAX_BOTS];
+static int controllingUserId[RP_MAX_BOTS];
 static int botTeleports[RP_MAX_BOTS];
 static bool showReplayControls[MAXPLAYERS + 1];
 
@@ -41,9 +41,9 @@ bool UpdateReplayControlMenu(int client)
 	if (!IsReplayBotControlled(bot, botClient) && !InBreather(bot))
 	{
 		CancelReplayControlsForBot(bot);
-		controllingPlayer[bot] = client;
+		controllingUserId[bot] = GetClientUserId(client);
 	}
-	else if (controllingPlayer[bot] != client)
+	else if (GetClientOfUserId(controllingUserId[bot]) != client)
 	{
 		return false;
 	}
@@ -152,9 +152,10 @@ void EnableReplayControls(int client)
 
 bool IsReplayBotControlled(int bot, int botClient)
 {
-	return IsValidClient(controllingPlayer[bot]) &&
-				(GetObserverTarget(controllingPlayer[bot]) == botClient ||
-				GetEntProp(controllingPlayer[bot], Prop_Send, "m_iObserverMode") == 6);
+	int controller = GetClientOfUserId(controllingUserId[bot]);
+	return IsValidClient(controller) &&
+				(GetObserverTarget(controller) == botClient ||
+				GetEntProp(controller, Prop_Send, "m_iObserverMode") == 6);
 }
 
 int MenuHandler_ReplayControls(Menu menu, MenuAction action, int param1, int param2)
@@ -169,7 +170,7 @@ int MenuHandler_ReplayControls(Menu menu, MenuAction action, int param1, int par
 			}
 
 			int bot = GetBotFromClient(GetObserverTarget(param1));
-			if (bot == -1 || controllingPlayer[bot] != param1)
+			if (bot == -1 || GetClientOfUserId(controllingUserId[bot]) != param1)
 			{
 				return 0;
 			}
@@ -221,5 +222,5 @@ void CancelReplayControls(int client)
 
 void CancelReplayControlsForBot(int bot)
 {
-	CancelReplayControls(controllingPlayer[bot]);
+	CancelReplayControls(GetClientOfUserId(controllingUserId[bot]));
 }
