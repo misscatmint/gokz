@@ -242,6 +242,7 @@ void TrySkipToTime(int client, int seconds)
 	else
 	{
 		GOKZ_PrintToChat(client, true, "%t", "Replay Controls - Invalid Time");
+		GOKZ_PlayErrorSound(client);
 	}
 }
 
