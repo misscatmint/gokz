@@ -15,8 +15,8 @@ static ArrayList playbackTickData[RP_MAX_BOTS];
 static bool inBreather[RP_MAX_BOTS];
 static float breatherStartTime[RP_MAX_BOTS];
 
-// Original bot caller, needed for OnClientPutInServer callback
-static int botCaller[RP_MAX_BOTS];
+// Userid of the original bot caller, needed for OnClientPutInServer callback
+static int botCallerUserId[RP_MAX_BOTS];
 // Original bot name after creation by bot_add, needed for bot removal
 static char botName[RP_MAX_BOTS][MAX_NAME_LENGTH];
 static bool botInGame[RP_MAX_BOTS];
@@ -99,7 +99,7 @@ int LoadReplayBot(int client, char[] path)
 	}
 	
 	ServerCommand("bot_add");
-	botCaller[bot] = client;
+	botCallerUserId[bot] = GetClientUserId(client);
 	return botClient[bot];
 }
 
@@ -279,18 +279,21 @@ void OnClientPutInServer_Playback(int client)
 	for (int bot; bot < RP_MAX_BOTS; bot++)
 	{
 		// Also check if the bot was created by us.
-		if (!botInGame[bot] && botCaller[bot] != 0)
+		if (!botInGame[bot] && botCallerUserId[bot] != 0)
 		{
 			botInGame[bot] = true;
 			botClient[bot] = client;
 			GetClientName(client, botName[bot], sizeof(botName[]));
 			// The bot won't receive its weapons properly if we don't wait a frame
 			RequestFrame(SetBotStuff, bot);
-			if (IsValidClient(botCaller[bot]))
+			int caller = GetClientOfUserId(botCallerUserId[bot]);
+			if (IsValidClient(caller))
 			{
-				MakePlayerSpectate(botCaller[bot], botClient[bot]);
-				botCaller[bot] = 0;
+				MakePlayerSpectate(caller, botClient[bot]);
 			}
+			// Reset even if the caller left, or the next unrelated bot to join
+			// would be claimed for this slot.
+			botCallerUserId[bot] = 0;
 			break;
 		}
 	}
