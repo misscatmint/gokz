@@ -19,7 +19,7 @@ public Plugin myinfo =
 	name = "GOKZ Local DB", 
 	author = "DanZay", 
 	description = "Provides database for players, maps, courses and times", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 
