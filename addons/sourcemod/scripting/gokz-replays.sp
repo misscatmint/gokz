@@ -30,7 +30,7 @@ public Plugin myinfo =
 	name = "GOKZ Replays", 
 	author = "DanZay", 
 	description = "Records runs to disk and allows playback using bots", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 
