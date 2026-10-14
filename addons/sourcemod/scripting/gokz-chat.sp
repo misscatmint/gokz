@@ -21,7 +21,7 @@ public Plugin myinfo =
 	name = "GOKZ Chat", 
 	author = "DanZay", 
 	description = "Handles client-triggered chat messages", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 

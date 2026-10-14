@@ -19,7 +19,7 @@ public Plugin myinfo =
 	name = "GOKZ Tips", 
 	author = "DanZay", 
 	description = "Prints tips to chat periodically based on loaded plugins", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 

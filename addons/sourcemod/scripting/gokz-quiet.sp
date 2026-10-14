@@ -17,7 +17,7 @@ public Plugin myinfo =
 	name = "GOKZ Quiet",
 	author = "DanZay",
 	description = "Provides options for a quieter KZ experience",
-	version = GOKZ_VERSION,
+	version = GOKZ_SRS_VERSION,
 	url = GOKZ_SOURCE_URL
 };
 
