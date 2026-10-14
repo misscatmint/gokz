@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "GOKZ Spectate Menu", 
 	author = "DanZay", 
 	description = "Provides easy ways to spectate players", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 
