@@ -29,11 +29,12 @@ jobs:
       - name: version
         run: |
           VERSION=$(grep -oP '(?<=#define GOKZ_VERSION ")[^"]+' addons/sourcemod/scripting/include/gokz/version.inc)
-          if [ -z "$VERSION" ]; then
-            echo "Could not parse version from version.inc" >&2
+          SUFFIX=$(grep -oP '(?<=#define GOKZ_SRS_VERSION GOKZ_VERSION \.\.\. ")[^"]+' addons/sourcemod/scripting/include/gokz/srs.inc)
+          if [ -z "$VERSION" ] || [ -z "$SUFFIX" ]; then
+            echo "Could not parse version from version.inc and srs.inc" >&2
             exit 1
           fi
-          echo "GOKZ_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "GOKZ_VERSION=${VERSION}${SUFFIX}" >> $GITHUB_ENV
 
       - name: compile
         run: |
