@@ -115,8 +115,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PATH="$PWD/sm/addons/sourcemod/scripting:$PATH" python3 tools/srs.py dist
-          gh release create "$GITHUB_REF_NAME" --draft \
+          base="${GITHUB_REF_NAME%-srs*}"
+          head="$GITHUB_REPOSITORY_OWNER:${GITHUB_REPOSITORY#*/}:$GITHUB_REF_NAME"
+          gh release create "$GITHUB_REF_NAME" \
             --title "GOKZ v$GITHUB_REF_NAME" \
-            --notes "GOKZ v${GITHUB_REF_NAME%-srs*}, with the following changes added:" \
+            --notes "GOKZ v$base, with the following changes added: https://github.com/KZGlobalTeam/gokz/compare/$base...$head" \
             "GOKZ-v$GITHUB_REF_NAME.zip" \
             "GOKZ-v$GITHUB_REF_NAME-upgrade.zip"

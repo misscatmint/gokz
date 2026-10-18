@@ -30,7 +30,7 @@ moves srs to it.
 
 dist writes GOKZ-v<tag>.zip and GOKZ-v<tag>-upgrade.zip to the repo root, with
 the same files as upstream's release zips. CI runs it when an srs tag is
-pushed and attaches the zips to a draft GitHub release.
+pushed and attaches the zips to a GitHub release.
 """
 
 import argparse
