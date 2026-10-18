@@ -28,10 +28,12 @@ release runs check on srs-dev and adds the srs version suffix to every plugin
 that differs from upstream. Then it tags srs-dev as the next srs release and
 moves srs to it.
 
-dist writes GOKZ-v<tag>.zip and GOKZ-v<tag>-upgrade.zip to dist/, with
-the same files as upstream's release zips. The zips are reproducible: the same
-tag and SourceMod build always give the same bytes. CI runs it when an srs tag
-is pushed and attaches the zips to a GitHub release.
+dist writes GOKZ-<name>.zip and GOKZ-<name>-upgrade.zip to dist/, with the
+same files as upstream's release zips. <name> is v and HEAD's srs tag, like
+v3.8.0-srs1. An untagged commit gets v3.8.0-dev-1a2b3c4d, or dev-1a2b3c4d if
+it was started from upstream's dev. The zips are reproducible: the same commit
+and SourceMod build always give the same bytes. CI runs it when an srs tag is
+pushed and attaches the zips to a GitHub release.
 
 check, release and dist compile with spcomp64 from SMDIR, a SourceMod
 scripting folder (the one with spcomp64 and include/ in it).
@@ -312,12 +314,17 @@ def release() -> None:
           f'  git push --force-with-lease origin srs {name}')
 
 def dist() -> None:
-    """Write the release zips of the srs release tagged at HEAD."""
-    name = subprocess.run(
+    """Write the release zips of HEAD, named after its srs tag if it has one."""
+    tag = subprocess.run(
         ['git', 'describe', '--tags', '--exact-match', '--match', '*-srs*',
          'HEAD'], capture_output=True, text=True).stdout.strip()
-    if not name:
-        sys.exit("HEAD isn't tagged as an srs release")
+    if tag:
+        name = f'v{tag}'
+    else:
+        base = check_base()
+        # A fixed length, since git's short hashes grow with the repo.
+        commit = git('rev-parse', 'HEAD')[:8]
+        name = f'v{base}-dev-{commit}' if tag_exists(base) else f'dev-{commit}'
 
     # Everything time-dependent comes from the commit, so builds match.
     when = datetime.fromtimestamp(int(git('log', '-1', '--format=%ct')), UTC)
@@ -329,8 +336,8 @@ def dist() -> None:
                        if path.is_file())
         Path('dist').mkdir(exist_ok=True)
         # The upgrade zip also leaves out cfg, so it keeps server configs.
-        for zip_name, excluded in ((f'dist/GOKZ-v{name}.zip', DIST_EXCLUDED),
-                                   (f'dist/GOKZ-v{name}-upgrade.zip',
+        for zip_name, excluded in ((f'dist/GOKZ-{name}.zip', DIST_EXCLUDED),
+                                   (f'dist/GOKZ-{name}-upgrade.zip',
                                     [*DIST_EXCLUDED, 'cfg'])):
             with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as out:
                 for path in files:
