@@ -31,9 +31,10 @@ moves srs to it.
 dist writes GOKZ-<name>.zip and GOKZ-<name>-upgrade.zip to dist/, with the
 same files as upstream's release zips. <name> is v and HEAD's srs tag, like
 v3.8.0-srs1. An untagged commit gets v3.8.0-dev-1a2b3c4d, or dev-1a2b3c4d if
-it was started from upstream's dev. The zips are reproducible: the same commit
-and SourceMod build always give the same bytes. CI runs it when an srs tag is
-pushed and attaches the zips to a GitHub release.
+it was started from upstream's dev. The same commit and SourceMod build give
+the same bytes, except for spcomp's stack estimate in each plugin, which a
+spcomp bug lets vary between machines. CI runs it when an srs tag is pushed
+and attaches the zips to a GitHub release.
 
 check, release and dist compile with spcomp64 from SMDIR, a SourceMod
 scripting folder (the one with spcomp64 and include/ in it).
@@ -163,7 +164,8 @@ def build(rev: str, out: Path, *,
     (out / PLUGINS).mkdir(exist_ok=True)
     # spcomp records includes by the path it found them through, and its stack
     # estimate shifts with where it and its includes live. A copy at a
-    # relative path, with relative paths everywhere, keeps both identical.
+    # relative path, with relative paths everywhere, keeps the paths out and
+    # the estimate as stable as spcomp allows.
     (scripting / 'smdir').mkdir()
     shutil.copy2(smdir / 'spcomp64', scripting / 'smdir')
     shutil.copytree(smdir / 'include', scripting / 'smdir' / 'include')
