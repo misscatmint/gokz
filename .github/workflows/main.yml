@@ -108,3 +108,15 @@ jobs:
             --generate-notes \
             GOKZ-v${{ env.GOKZ_VERSION }}.zip \
             GOKZ-v${{ env.GOKZ_VERSION }}-upgrade.zip
+
+      - name: Create srs release
+        if: startsWith(github.ref, 'refs/tags/') && contains(github.ref_name, '-srs')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PATH="$PWD/sm/addons/sourcemod/scripting:$PATH" python3 tools/srs.py dist
+          gh release create "$GITHUB_REF_NAME" --draft \
+            --title "GOKZ v$GITHUB_REF_NAME" \
+            --notes "GOKZ v${GITHUB_REF_NAME%-srs*}, with the following changes added:" \
+            "GOKZ-v$GITHUB_REF_NAME.zip" \
+            "GOKZ-v$GITHUB_REF_NAME-upgrade.zip"

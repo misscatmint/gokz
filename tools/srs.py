@@ -5,6 +5,7 @@
   srs.py rebuild  rebuild srs-dev from .srs.toml
   srs.py check    check the current branch against the allowlist
   srs.py release  release srs-dev's build as srs
+  srs.py dist     build the release zips of the srs tag at HEAD
 
 rebuild resets srs-dev to the tag, then merges srs-version and the branches
 into it, in order. .srs.toml looks like this:
@@ -26,9 +27,14 @@ on, or for a branch started from upstream's dev, the commit it started from.
 release runs check on srs-dev and adds the srs version suffix to every plugin
 that differs from upstream. Then it tags srs-dev as the next srs release and
 moves srs to it.
+
+dist writes GOKZ-v<tag>.zip and GOKZ-v<tag>-upgrade.zip to the repo root, with
+the same files as upstream's release zips. CI runs it when an srs tag is
+pushed and attaches the zips to a draft GitHub release.
 """
 
 import argparse
+import fnmatch
 import os
 import re
 import shutil
@@ -36,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+import zipfile
 import zlib
 from pathlib import Path
 from typing import cast
@@ -53,6 +60,10 @@ UPSTREAM = 'refs/remotes/upstream/master'
 UPSTREAM_DEV = 'refs/remotes/upstream/dev'
 SCRIPTING = 'addons/sourcemod/scripting'
 GAMEDATA = 'addons/sourcemod/gamedata'
+PLUGINS = 'addons/sourcemod/plugins'
+# Upstream's release zips leave these out by name at any depth, plus scripting.
+DIST_EXCLUDED = ['sm', '*.md', '.github', '.git', 'LICENSE', '*.zip', '*.fgd',
+                 'tools']
 SRS_INC = f'{SCRIPTING}/include/gokz/srs.inc'
 VERSION_LINE = b'version = GOKZ_VERSION,'
 SRS_VERSION_LINE = b'version = GOKZ_SRS_VERSION,'
@@ -125,20 +136,23 @@ def behavior_sections(smx: bytes) -> dict[str, bytes]:
             sections[name] = content
     return sections
 
-def build(rev: str, out: Path) -> dict[str, dict[str, bytes]]:
-    """Compile every plugin at rev and return their behavior sections."""
+def build(rev: str, out: Path, *,
+          pin_time: bool) -> dict[str, dict[str, bytes]]:
+    """Export and compile rev in out, returning its plugins' sections."""
     out.mkdir()
-    archive = subprocess.run(['git', 'archive', rev, SCRIPTING], check=True,
+    archive = subprocess.run(['git', 'archive', rev], check=True,
                              capture_output=True).stdout
     subprocess.run(['tar', '-x', '-C', str(out)], input=archive, check=True)
     scripting = out / SCRIPTING
+    (out / PLUGINS).mkdir(exist_ok=True)
+    # spcomp embeds the compile time, so pinning it gives identical output.
+    defines = ['__DATE__="x"', '__TIME__="x"'] if pin_time else []
     plugins: dict[str, dict[str, bytes]] = {}
     for source in sorted(scripting.glob('gokz-*.sp')):
-        smx = out / f'{source.stem}.smx'
-        # spcomp embeds the compile time, so pin it for identical output.
+        smx = out / PLUGINS / f'{source.stem}.smx'
         result = subprocess.run(
-            ['spcomp64', '-i', 'include', '__DATE__="x"', '__TIME__="x"',
-             source.name, '-o', str(smx)],
+            ['spcomp64', '-i', 'include', *defines, source.name,
+             '-o', str(smx)],
             cwd=scripting, capture_output=True, text=True)
         if result.returncode != 0:
             sys.exit(f"{source.name} doesn't compile at {rev} (spcomp64 exit "
@@ -208,8 +222,8 @@ def check(base: str) -> list[str]:
     print(f'comparing with upstream {base}')
 
     with tempfile.TemporaryDirectory() as temp:
-        upstream = build(base, Path(temp, 'upstream'))
-        srs = build('HEAD', Path(temp, 'srs'))
+        upstream = build(base, Path(temp, 'upstream'), pin_time=True)
+        srs = build('HEAD', Path(temp, 'srs'), pin_time=True)
     changed = sorted(name for name in upstream.keys() | srs.keys()
                      if srs.get(name) != upstream.get(name))
     print('plugins that differ from upstream:', ', '.join(changed) or 'none')
@@ -277,12 +291,41 @@ def release() -> None:
     print(f'released {name}, push it with:\n'
           f'  git push --force-with-lease origin srs {name}')
 
+def dist() -> None:
+    """Write the release zips of the srs release tagged at HEAD."""
+    if shutil.which('spcomp64') is None:
+        sys.exit('spcomp64 is not on PATH')
+    name = subprocess.run(
+        ['git', 'describe', '--tags', '--exact-match', '--match', '*-srs*',
+         'HEAD'], capture_output=True, text=True).stdout.strip()
+    if not name:
+        sys.exit("HEAD isn't tagged as an srs release")
+
+    with tempfile.TemporaryDirectory() as temp:
+        tree = Path(temp, 'tree')
+        _ = build('HEAD', tree, pin_time=False)
+        files = sorted(path.relative_to(tree) for path in tree.rglob('*')
+                       if path.is_file())
+        # The upgrade zip also leaves out cfg, so it keeps server configs.
+        for zip_name, excluded in ((f'GOKZ-v{name}.zip', DIST_EXCLUDED),
+                                   (f'GOKZ-v{name}-upgrade.zip',
+                                    [*DIST_EXCLUDED, 'cfg'])):
+            with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as out:
+                for path in files:
+                    if not (path.is_relative_to(SCRIPTING)
+                            or any(fnmatch.fnmatch(part, pattern)
+                                   for part in path.parts
+                                   for pattern in excluded)):
+                        out.write(tree / path, path)
+            print(f'wrote {zip_name}')
+
 def main() -> None:
     """Run the subcommand named on the command line."""
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('command', choices=['rebuild', 'check', 'release'])
+    parser.add_argument('command',
+                        choices=['rebuild', 'check', 'release', 'dist'])
     args = parser.parse_args()
     command: str = args.command
 
@@ -297,8 +340,10 @@ def main() -> None:
             base = check_base()
             check(base)
             print(f'nothing outside the allowlist differs from {base}')
-        else:
+        elif command == 'release':
             release()
+        else:
+            dist()
     except subprocess.CalledProcessError as error:
         # The command already printed its error to stderr.
         sys.exit(error.returncode)
