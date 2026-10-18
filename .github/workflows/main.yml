@@ -113,8 +113,12 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/') && contains(github.ref_name, '-srs')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pinned so the same tag always builds the same zips.
+          SOURCEMOD: https://github.com/alliedmodders/sourcemod/releases/download/1.12.0.7255/sourcemod-1.12.0-git7255-linux.tar.gz
         run: |
-          PATH="$PWD/sm/addons/sourcemod/scripting:$PATH" python3 tools/srs.py dist
+          mkdir sourcemod
+          wget -q -O - "$SOURCEMOD" | tar -xz -C sourcemod
+          SMDIR="$PWD/sourcemod/addons/sourcemod/scripting" python3 tools/srs.py dist
           base="${GITHUB_REF_NAME%-srs*}"
           head="$GITHUB_REPOSITORY_OWNER:${GITHUB_REPOSITORY#*/}:$GITHUB_REF_NAME"
           gh release create "$GITHUB_REF_NAME" \
