@@ -196,7 +196,9 @@ def rebuild() -> None:
         if git('diff', '--name-only', '--diff-filter=U'):
             sys.exit('resolve the conflict, commit it, then rerun')
         git(*rerere, 'commit', '--quiet', '--no-edit')
-    print('srs-dev is built')
+    print('srs-dev is built. Test it, then release it:\n'
+          '  tools/srs.py check    (optional, just the allowlist check)\n'
+          '  tools/srs.py release')
 
 def check_base() -> str:
     """Return the upstream code HEAD should be compared with.
