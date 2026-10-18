@@ -4,6 +4,7 @@
 #include <sdktools>
 
 #include <gokz/core>
+#include <gokz/srs>
 #include <gokz/localdb>
 #include <gokz/localranks>
 
@@ -25,7 +26,7 @@ public Plugin myinfo =
 	name = "GOKZ Local Ranks", 
 	author = "DanZay", 
 	description = "Extends and provides in-game functionality for local database", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 
