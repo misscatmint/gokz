@@ -139,6 +139,10 @@ def behavior_sections(smx: bytes) -> dict[str, bytes]:
 def build(rev: str, out: Path, *,
           pin_time: bool) -> dict[str, dict[str, bytes]]:
     """Export and compile rev in out, returning its plugins' sections."""
+    # spcomp looks for its own includes next to the path it was started by.
+    spcomp = shutil.which('spcomp64')
+    if spcomp is None:
+        sys.exit('spcomp64 is not on PATH')
     out.mkdir()
     archive = subprocess.run(['git', 'archive', rev], check=True,
                              capture_output=True).stdout
@@ -151,8 +155,7 @@ def build(rev: str, out: Path, *,
     for source in sorted(scripting.glob('gokz-*.sp')):
         smx = out / PLUGINS / f'{source.stem}.smx'
         result = subprocess.run(
-            ['spcomp64', '-i', 'include', *defines, source.name,
-             '-o', str(smx)],
+            [spcomp, '-i', 'include', *defines, source.name, '-o', str(smx)],
             cwd=scripting, capture_output=True, text=True)
         if result.returncode != 0:
             sys.exit(f"{source.name} doesn't compile at {rev} (spcomp64 exit "
@@ -219,8 +222,6 @@ def check(base: str) -> list[str]:
     Exits if one outside the allowlist differs or was deleted, or if its
     gamedata differs.
     """
-    if shutil.which('spcomp64') is None:
-        sys.exit('spcomp64 is not on PATH')
     print(f'comparing with upstream {base}')
 
     with tempfile.TemporaryDirectory() as temp:
@@ -295,8 +296,6 @@ def release() -> None:
 
 def dist() -> None:
     """Write the release zips of the srs release tagged at HEAD."""
-    if shutil.which('spcomp64') is None:
-        sys.exit('spcomp64 is not on PATH')
     name = subprocess.run(
         ['git', 'describe', '--tags', '--exact-match', '--match', '*-srs*',
          'HEAD'], capture_output=True, text=True).stdout.strip()
