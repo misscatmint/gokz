@@ -61,9 +61,9 @@ UPSTREAM_DEV = 'refs/remotes/upstream/dev'
 SCRIPTING = 'addons/sourcemod/scripting'
 GAMEDATA = 'addons/sourcemod/gamedata'
 PLUGINS = 'addons/sourcemod/plugins'
-# Upstream's release zips leave these out by name at any depth, plus scripting.
-DIST_EXCLUDED = ['sm', '*.md', '.github', '.git', 'LICENSE', '*.zip', '*.fgd',
-                 'tools']
+# Upstream's release zips leave these out by name at any depth, plus
+# scripting. Theirs match .git exactly, so they ship .gitignore too.
+DIST_EXCLUDED = ['sm', '*.md', '.git*', 'LICENSE', '*.zip', '*.fgd', 'tools']
 SRS_INC = f'{SCRIPTING}/include/gokz/srs.inc'
 VERSION_LINE = b'version = GOKZ_VERSION,'
 SRS_VERSION_LINE = b'version = GOKZ_SRS_VERSION,'
