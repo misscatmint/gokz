@@ -124,5 +124,5 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --title "GOKZ v$GITHUB_REF_NAME" \
             --notes "GOKZ v$base, with the following changes added: https://github.com/KZGlobalTeam/gokz/compare/$base...$head" \
-            "GOKZ-v$GITHUB_REF_NAME.zip" \
-            "GOKZ-v$GITHUB_REF_NAME-upgrade.zip"
+            "dist/GOKZ-v$GITHUB_REF_NAME.zip" \
+            "dist/GOKZ-v$GITHUB_REF_NAME-upgrade.zip"

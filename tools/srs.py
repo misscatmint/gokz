@@ -28,7 +28,7 @@ release runs check on srs-dev and adds the srs version suffix to every plugin
 that differs from upstream. Then it tags srs-dev as the next srs release and
 moves srs to it.
 
-dist writes GOKZ-v<tag>.zip and GOKZ-v<tag>-upgrade.zip to the repo root, with
+dist writes GOKZ-v<tag>.zip and GOKZ-v<tag>-upgrade.zip to dist/, with
 the same files as upstream's release zips. The zips are reproducible: the same
 tag and SourceMod build always give the same bytes. CI runs it when an srs tag
 is pushed and attaches the zips to a GitHub release.
@@ -327,9 +327,10 @@ def dist() -> None:
                                        when.strftime('%H:%M:%S')))
         files = sorted(path.relative_to(tree) for path in tree.rglob('*')
                        if path.is_file())
+        Path('dist').mkdir(exist_ok=True)
         # The upgrade zip also leaves out cfg, so it keeps server configs.
-        for zip_name, excluded in ((f'GOKZ-v{name}.zip', DIST_EXCLUDED),
-                                   (f'GOKZ-v{name}-upgrade.zip',
+        for zip_name, excluded in ((f'dist/GOKZ-v{name}.zip', DIST_EXCLUDED),
+                                   (f'dist/GOKZ-v{name}-upgrade.zip',
                                     [*DIST_EXCLUDED, 'cfg'])):
             with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as out:
                 for path in files:
