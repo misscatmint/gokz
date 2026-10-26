@@ -1,0 +1,78 @@
+"Phrases"
+{
+	// =====[ CHAT MESSAGES ]=====
+	"Rejoined Held Slot"
+	{
+		"en"		"{grey}Welcome back, your run carried on while you were away."
+	}
+	"Rejoined Held Slot (Paused)"
+	{
+		"en"		"{grey}Welcome back, your run was paused once you came to a stop. Type {default}!pause{grey} to resume."
+	}
+	"Rejoined Held Slot (Still Paused)"
+	{
+		"en"		"{grey}Welcome back, your run is still paused. Type {default}!pause{grey} to resume."
+	}
+	"Rejoined Held Slot (Ran)"
+	{
+		// Welcome back, your timer ran on for 00:12.34 while you were away.
+		"#format"	"{1:s}"
+		"en"		"{grey}Welcome back, your timer ran on for {default}{1}{grey} while you were away."
+	}
+	"Rejoined Held Slot (Paused, Ran)"
+	{
+		// Welcome back, your timer ran on for 00:12.34 until you came to a stop and it paused. Type !pause to resume.
+		"#format"	"{1:s}"
+		"en"		"{grey}Welcome back, your timer ran on for {default}{1}{grey} until you came to a stop and it paused. Type {default}!pause{grey} to resume."
+	}
+
+
+	// =====[ ANNOUNCEMENTS ]=====
+	"Held Disconnection Message"
+	{
+		// Bill has left the server (Disconnect). Their timer is kept for 30 min.
+		"#format"	"{1:N},{2:s},{3:d}"
+		"en"		"{lime}{1}{grey} has left the server ({2}). Their timer is kept for {3} min."
+	}
+	"Rejoin Message"
+	{
+		// Bill has joined the server. Their timer was kept.
+		"#format"	"{1:N}"
+		"en"		"{lime}{1}{grey} has joined the server. Their timer was kept."
+	}
+
+	// =====[ RUN ENDED WHILE AWAY ]=====
+	"Away Run End (Finished Map)"
+	{
+		// While you were away, your run finished the map in PRO 01:23.45.
+		"#format"	"{1:s},{2:s}"
+		"en"		"{grey}While you were away, your run finished the map in {blue}{1} {default}{2}{grey}."
+	}
+	"Away Run End (Finished Bonus)"
+	{
+		// While you were away, your run finished Bonus 1 in PRO 01:23.45.
+		"#format"	"{1:d},{2:s},{3:s}"
+		"en"		"{grey}While you were away, your run finished {bluegrey}Bonus {1}{grey} in {blue}{2} {default}{3}{grey}."
+	}
+	"Away Run End (Round Restart)"
+	{
+		"en"		"{grey}While you were away, the round restarted and your run ended."
+	}
+	"Away Run End (Stopped)"
+	{
+		"en"		"{grey}While you were away, your timer was stopped."
+	}
+	"Away Run End (Timeout)"
+	{
+		"#format"	"{1:d}"
+		"en"		"{grey}Your run was not kept: runs are only held for {default}{1}{grey} min after leaving."
+	}
+	"Away Run End (Map Change)"
+	{
+		"en"		"{grey}Your run was not kept: the map changed while you were away."
+	}
+	"Away Run End (Server Full)"
+	{
+		"en"		"{grey}Your run was not kept: the server filled up and needed your slot."
+	}
+}
