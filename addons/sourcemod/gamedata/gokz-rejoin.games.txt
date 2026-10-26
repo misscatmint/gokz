@@ -1,0 +1,296 @@
+"Games"
+{
+	"csgo"
+	{
+		"Keys"
+		{
+			"IServerGameClients"	"ServerGameClients004"
+			"IServerGameEnts"		"ServerGameEnts001"
+			"IVEngineServer"		"VEngineServer023"
+		}
+
+		"Functions"
+		{
+			"CBaseServer::ConnectClient"
+			{
+				"signature"	"CBaseServer::ConnectClient"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"address"
+				"arguments"
+				{
+					"adr"
+					{
+						"type"	"int"
+					}
+					"protocol"
+					{
+						"type"	"int"
+					}
+					"challenge"
+					{
+						"type"	"int"
+					}
+					"authProtocol"
+					{
+						"type"	"int"
+					}
+					"name"
+					{
+						"type"	"int"
+					}
+					"password"
+					{
+						"type"	"int"
+					}
+					"hashedCDkey"
+					{
+						"type"	"int"
+					}
+					"cdKeyLen"
+					{
+						"type"	"int"
+					}
+					"splitScreenClients"
+					{
+						"type"	"int"
+					}
+					"isClientLowViolence"
+					{
+						"type"	"int"
+					}
+					"clientPlatform"
+					{
+						"type"	"int"
+					}
+					"pbEncryptionKey"
+					{
+						"type"	"int"
+					}
+					"nEncryptionKeyIndex"
+					{
+						"type"	"int"
+					}
+				}
+			}
+			"CBaseServer::GetFreeClientInternal"
+			{
+				"signature"	"CBaseServer::GetFreeClientInternal"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"address"
+				"arguments"
+				{
+					"adr"
+					{
+						"type"	"int"
+					}
+				}
+			}
+			"CGameServer::RemoveClientFromGame"
+			{
+				"signature"	"CGameServer::RemoveClientFromGame"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"address"
+				"arguments"
+				{
+					"client"
+					{
+						"type"	"int"
+					}
+				}
+			}
+		}
+
+		"Signatures"
+		{
+			"CreateInterface"
+			{
+				"library"	"server"
+				"windows"	"@CreateInterface"
+				"linux"		"@CreateInterface"
+			}
+			"CreateInterface_Engine"
+			{
+				"library"	"engine"
+				"windows"	"@CreateInterface"
+				"linux"		"@CreateInterface"
+			}
+			"CBaseServer::ConnectClient"
+			{
+				"library"	"engine"
+				"windows"	"\x55\x8B\xEC\x83\xE4\xF8\x81\xEC\xDC\x00\x00\x00\x53\x8B\x5D\x08\x56\x57\x8B\xF9\xC7\x44\x24\x20\x00\x00\x00\x00"
+				"linux"		"\x55\x89\xE5\x57\x56\x53\x81\xEC\x0C\x01\x00\x00\x8B\x4D\x1C\x8B\x45\x0C\x8B\x7D\x08\x8B\x5D\x20"
+			}
+			"CBaseServer::GetFreeClientInternal"
+			{
+				"library"	"engine"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x50\x53\x8B\xD9\x56\x57\x33\xF6\x89\x5D\xF8\x33\xFF\x39\xB3\x80\x02\x00\x00"
+				"linux"		"\x55\x89\xE5\x57\x56\x53\x83\xEC\x6C\x8B\x7D\x08\xC7\x45\xA0\x00\x00\x00\x00\x8B\x45\x0C\x8B\xB7\x80\x02\x00\x00"
+			}
+			"CGameServer::RemoveClientFromGame"
+			{
+				"library"	"engine"
+				"windows"	"\x55\x8B\xEC\x56\x8B\x75\x08\x57\x8B\xF9\x83\xBE\x94\x04\x00\x00\x00\x74\x43\x8B\x46\x04\x8D\x4E\x04"
+				"linux"		"\x55\x89\xE5\x56\x53\x8B\x5D\x0C\x8B\x75\x08\x8B\x83\x54\x04\x00\x00\x85\xC0\x74\x1A\x8B\x03\x8B\x40\x74"
+			}
+		}
+
+		"Offsets"
+		{
+			"IServerGameClients::ClientActive"
+			{
+				"windows"	"2"
+				"linux"		"2"
+			}
+			"IServerGameClients::ClientDisconnect"
+			{
+				"windows"	"4"
+				"linux"		"4"
+			}
+			"IServerGameClients::ClientPutInServer"
+			{
+				"windows"	"5"
+				"linux"		"5"
+			}
+			"IServerGameClients::ClientSettingsChanged"
+			{
+				"windows"	"8"
+				"linux"		"8"
+			}
+			"IServerGameEnts::FreeContainingEntity"
+			{
+				"windows"	"2"
+				"linux"		"3"
+			}
+			"IVEngineServer::GetPlayerUserId"
+			{
+				"windows"	"17"
+				"linux"		"17"
+			}
+			"IServerGameEnts::BaseEntityToEdict"
+			{
+				"windows"	"3"
+				"linux"		"4"
+			}
+			"CGameClient::CheckConnect"
+			{
+				"windows"	"42"
+				"linux"		"16"
+			}
+			// IClient methods (CheckConnect, Connect, Disconnect) sit in the IClient vtable on Windows
+			"CGameClient::CheckConnect_ThisOffset"
+			{
+				"windows"	"4"
+				"linux"		"0"
+			}
+			"CGameClient::Connect"
+			{
+				"windows"	"12"
+				"linux"		"12"
+			}
+			"CGameClient::Disconnect"
+			{
+				"windows"	"15"
+				"linux"		"15"
+			}
+			// In the IClient vtable on both, this at CBaseClient + 4
+			"IClient::IsConnected"
+			{
+				"windows"	"33"
+				"linux"		"34"
+			}
+			"CGameClient::ActivatePlayer"
+			{
+				"windows"	"29"
+				"linux"		"67"
+			}
+			"CGameClient::ProcessSignonStateMsg"
+			{
+				"windows"	"35"
+				"linux"		"80"
+			}
+
+			// CUtlVector<CBaseClient *>
+			"CBaseServer::m_Clients"
+			{
+				"windows"	"628"
+				"linux"		"628"
+			}
+			// m_Clients' element count
+			"CBaseServer::m_ClientCount"
+			{
+				"windows"	"640"
+				"linux"		"640"
+			}
+			"CBaseServer::m_nUserid"
+			{
+				"windows"	"608"
+				"linux"		"608"
+			}
+			"CBaseClient::m_bFakePlayer"
+			{
+				"windows"	"848"
+				"linux"		"828"
+			}
+			"CBasePlayer::m_LastCmd"
+			{
+				"windows"	"4044"
+				"linux"		"4068"
+			}
+			"CBasePlayer::m_nMovementTicksForUserCmdProcessingRemaining"
+			{
+				"windows"	"4716"
+				"linux"		"4740"
+			}
+
+			// Every input field of CUserCmd
+			"CUserCmd::forwardmove"
+			{
+				"windows"	"36"
+				"linux"		"36"
+			}
+			"CUserCmd::sidemove"
+			{
+				"windows"	"40"
+				"linux"		"40"
+			}
+			"CUserCmd::upmove"
+			{
+				"windows"	"44"
+				"linux"		"44"
+			}
+			"CUserCmd::buttons"
+			{
+				"windows"	"48"
+				"linux"		"48"
+			}
+			"CUserCmd::impulse"
+			{
+				"windows"	"52"
+				"linux"		"52"
+			}
+			"CUserCmd::weaponselect"
+			{
+				"windows"	"56"
+				"linux"		"56"
+			}
+			"CUserCmd::weaponsubtype"
+			{
+				"windows"	"60"
+				"linux"		"60"
+			}
+			"CUserCmd::mousedx"
+			{
+				"windows"	"72"
+				"linux"		"72"
+			}
+			"CUserCmd::mousedy"
+			{
+				"windows"	"74"
+				"linux"		"74"
+			}
+		}
+	}
+}
