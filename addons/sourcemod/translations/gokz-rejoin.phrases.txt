@@ -11,6 +11,10 @@
 	{
 		"en"		"{grey}Your timer was kept and is paused. Type {default}!pause{grey} to resume."
 	}
+	"Rejoined Held Slot (Unverified)"
+	{
+		"en"		"{grey}Steam has not verified you yet. Your times are saved once it does."
+	}
 
 
 	// =====[ ANNOUNCEMENTS ]=====
