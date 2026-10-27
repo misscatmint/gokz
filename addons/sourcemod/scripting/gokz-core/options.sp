@@ -239,6 +239,18 @@ void OnClientCookiesCached_Options(int client)
 	Call_GOKZ_OnOptionsLoaded(client);
 }
 
+// Options live in clientprefs cookies, which SourceMod's disconnect in the handover dropped
+void OnRunCarriedOver_Options(int client)
+{
+	if (GetTimerRunning(client))
+	{
+		char value[16];
+		IntToString(GetTimerStartMode(client), value, sizeof(value));
+		Cookie cookie = GetOptionProp(gC_CoreOptionNames[Option_Mode], OptionProp_Cookie);
+		cookie.Set(client, value);
+	}
+}
+
 void OnClientPutInServer_Options(int client)
 {
 	if (!GetModeLoaded(GOKZ_GetCoreOption(client, Option_Mode)))

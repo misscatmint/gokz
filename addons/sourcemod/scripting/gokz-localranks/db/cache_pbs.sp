@@ -41,7 +41,7 @@ void DB_CachePBs(int client, int steamID)
 public void DB_TxnSuccess_CachePBs(Handle db, int userID, int numQueries, Handle[] results, any[] queryData)
 {
 	int client = GetClientOfUserId(userID);
-	if (client < 1 || client > MaxClients || !IsClientAuthorized(client) || IsFakeClient(client))
+	if (client < 1 || client > MaxClients || !IsClientAuthorized(client) || !GOKZ_IsRunner(client))
 	{
 		return;
 	}

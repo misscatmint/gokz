@@ -104,7 +104,7 @@ public void OnAllPluginsLoaded()
 	{
 		if (GOKZ_DB_IsClientSetUp(i))
 		{
-			GOKZ_DB_OnClientSetup(i, GetSteamAccountID(i), GOKZ_DB_IsCheater(i));
+			GOKZ_DB_OnClientSetup(i, GOKZ_GetSteamAccountID(i), GOKZ_DB_IsCheater(i));
 		}
 	}
 }
@@ -197,7 +197,7 @@ public void GOKZ_LR_OnTimeProcessed(
 	// If new PB, update PB cache
 	if (firstTime || firstTimePro || pbDiff < 0.0 || pbDiffPro < 0.0)
 	{
-		DB_CachePBs(client, GetSteamAccountID(client));
+		DB_CachePBs(client, GOKZ_GetSteamAccountID(client));
 	}
 }
 
@@ -231,7 +231,7 @@ public void GOKZ_DB_OnMapSetup(int mapID)
 	{
 		if (GOKZ_DB_IsClientSetUp(client))
 		{
-			DB_CachePBs(client, GetSteamAccountID(client));
+			DB_CachePBs(client, GOKZ_GetSteamAccountID(client));
 		}
 	}
 }

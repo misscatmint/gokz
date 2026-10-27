@@ -123,7 +123,7 @@ public void DB_TxnSuccess_LoadTimerSetup(Handle db, DataPack data, int numQuerie
 	bool doChatMessage = data.ReadCell();
 	delete data;
 	
-	if (!IsValidClient(client) || steamid != GetSteamAccountID(client))
+	if (!IsValidClient(client) || steamid != GOKZ_GetSteamAccountID(client))
 	{
 		return;
 	}

@@ -389,7 +389,7 @@ enum struct JumpTracker
 	
 	bool HitBhop()
 	{
-		return Movement_GetTakeoffCmdNum(this.jumper) - Movement_GetLandingCmdNum(this.jumper) <= JS_MAX_BHOP_GROUND_TICKS;
+		return GOKZ_TookOffWithin(this.jumper, JS_MAX_BHOP_GROUND_TICKS);
 	}
 	
 	bool ValidWeirdJumpDropDistance()

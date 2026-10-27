@@ -16,12 +16,12 @@ enum struct UnverifiedTime
 
 void DB_SaveTime(int client, int course, int mode, int style, float runTime, int teleportsUsed)
 {
-	if (IsFakeClient(client))
+	if (!GOKZ_IsRunner(client))
 	{
 		return;
 	}
 	
-	int steamID = GetSteamAccountID(client);
+	int steamID = GOKZ_GetSteamAccountID(client);
 	int mapID = GOKZ_DB_GetCurrentMapID();
 	int runTimeMS = GOKZ_DB_TimeFloatToInt(runTime);
 	if (steamID == 0)

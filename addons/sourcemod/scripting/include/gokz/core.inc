@@ -1066,6 +1066,53 @@ native bool GOKZ_SetCourse(int client, int course);
 native bool GOKZ_GetPaused(int client);
 
 /**
+ * Gets whether the client's connect or disconnect hands over the same run,
+ * so plugins keep their run state (set by a plugin that holds runs).
+ * True only during the handover's connect and disconnect callbacks. A plugin
+ * that needs it later records it in OnClientConnected.
+ *
+ * @param client    	Client index.
+ * @return				Whether the run carries over.
+ */
+native bool GOKZ_GetRunCarriedOver(int client);
+
+/**
+ * Sets whether the client's connect or disconnect hands over the same run.
+ * For the plugin that holds runs.
+ *
+ * @param client    	Client index.
+ * @param carriedOver	Whether the run carries over.
+ */
+native void GOKZ_SetRunCarriedOver(int client, bool carriedOver);
+
+/**
+ * Gets whether the client's player has left and their run is held for them.
+ * SourceMod sees a held run as a bot.
+ *
+ * @param client    	Client index.
+ * @return				Whether the run is held.
+ */
+native bool GOKZ_GetRunHeld(int client);
+
+/**
+ * Gets the Steam account ID of the player whose run is held.
+ *
+ * @param client    	Client index.
+ * @return				Account ID, or 0 if the run is not held or Steam had not verified the player.
+ */
+native int GOKZ_GetHeldAccountID(int client);
+
+/**
+ * Sets whether the client's run is held for a player who left.
+ * For the plugin that holds runs.
+ *
+ * @param client    	Client index.
+ * @param held			Whether the run is held.
+ * @param accountID		Steam account ID of the player, or 0 if Steam had not verified them.
+ */
+native void GOKZ_SetRunHeld(int client, bool held, int accountID = 0);
+
+/**
  * Gets a player's current run time.
  *
  * @param client    	Client index.
@@ -1535,7 +1582,8 @@ native void GOKZ_EmitSoundToClient(int client, const char[] sample, float volume
  *
  * @param accountID		SteamID32 of the account (from GetSteamAccountID()).
  * @return				Index of the in-game, non-fake client playing as the
- *						account, or 0 if there is none.
+ *						account, else of the slot holding the account's run
+ *						for a player who left, or 0 if there is neither.
  */
 native int GOKZ_GetClientOfSteamAccountID(int accountID);
 
@@ -1848,6 +1896,36 @@ stock void GOKZ_EmitSoundToClientSpectators(int client, const char[] sample, flo
 	}
 }
 
+/**
+ * Gets whether the client is a runner: a connected player, or a player's held run.
+ * Replay bots and other bots are not. For anything that needs a connection or
+ * a person's input (chat, menus, sounds, convar queries, network info, input
+ * checks), use IsFakeClient, as a held run has none.
+ *
+ * @param client		Client index.
+ * @return				Whether the client is a runner.
+ */
+stock bool GOKZ_IsRunner(int client)
+{
+	return !IsFakeClient(client) || GOKZ_GetRunHeld(client);
+}
+
+/**
+ * GetSteamAccountID, giving the held player's account while their run is held.
+ *
+ * @param client		Client index.
+ * @param validate		Whether SourceMod must have validated the ID. A held run
+ *						has an account only if Steam had verified the player.
+ * @return				Steam account ID, or 0 if not available.
+ */
+stock int GOKZ_GetSteamAccountID(int client, bool validate = true)
+{
+	int accountID = GOKZ_GetHeldAccountID(client);
+	return accountID != 0 ? accountID : GetSteamAccountID(client, validate);
+}
+
+
+
 // =====[ DEPENDENCY ]=====
 
 public SharedPlugin __pl_gokz_core = 
@@ -1910,6 +1988,11 @@ public void __pl_gokz_core_SetNTVOptional()
 	MarkNativeAsOptional("GOKZ_GetCourse");
 	MarkNativeAsOptional("GOKZ_SetCourse");
 	MarkNativeAsOptional("GOKZ_GetPaused");
+	MarkNativeAsOptional("GOKZ_GetRunCarriedOver");
+	MarkNativeAsOptional("GOKZ_SetRunCarriedOver");
+	MarkNativeAsOptional("GOKZ_GetRunHeld");
+	MarkNativeAsOptional("GOKZ_GetHeldAccountID");
+	MarkNativeAsOptional("GOKZ_SetRunHeld");
 	MarkNativeAsOptional("GOKZ_GetTime");
 	MarkNativeAsOptional("GOKZ_SetTime");
 	MarkNativeAsOptional("GOKZ_InvalidateRun");

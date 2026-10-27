@@ -46,6 +46,14 @@ void OnMapEnd_SendRun()
 
 void SendTime(int client, int course, int mode, float time, int teleportsUsed)
 {
+	// Also for a held run's slot, which SourceMod sees as a bot
+	int accountID = GOKZ_GetSteamAccountID(client);
+	if (accountID == 0)
+	{
+		LogError("Failed to send a time to the global API, %N has no Steam account ID.", client);
+		return;
+	}
+
 	char steamid[32], modeStr[32], name[MAX_NAME_LENGTH];
 
 	int timeType = GOKZ_GetTimeTypeEx(teleportsUsed);
@@ -64,7 +72,7 @@ void SendTime(int client, int course, int mode, float time, int teleportsUsed)
 	GetClientName(client, name, sizeof(name));
 
 	DataPack dp = CreateDataPack();
-	dp.WriteCell(GetSteamAccountID(client));
+	dp.WriteCell(accountID);
 	dp.WriteString(name);
 	dp.WriteCell(course);
 	dp.WriteCell(mode);
@@ -72,7 +80,8 @@ void SendTime(int client, int course, int mode, float time, int teleportsUsed)
 	dp.WriteFloat(time);
 	dp.WriteString(gC_CurrentMap);
 
-	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
+	// As AuthId_Steam2 gives it
+	FormatEx(steamid, sizeof(steamid), "STEAM_1:%d:%d", accountID & 1, accountID >> 1);
 	GOKZ_GL_GetModeString(mode, modeStr, sizeof(modeStr));
 	GlobalAPI_CreateRecord(SendTimeCallback, dp, steamid, gI_MapID, modeStr, course, 128, teleportsUsed, time);
 }
@@ -182,7 +191,7 @@ public int SendTimeCallback(JSON_Object response, GlobalAPIRequestData request, 
 public void OnReplaySaved_SendReplay(int client, int replayType, const char[] map, int course, int timeType, float time, const char[] filePath, bool tempReplay)
 {
 	char key[64];
-	FormatRunKey(key, sizeof(key), GetSteamAccountID(client), course, timeType, time);
+	FormatRunKey(key, sizeof(key), GOKZ_GetSteamAccountID(client), course, timeType, time);
 	int recordId;
 	if (pendingRecordIds.GetValue(key, recordId))
 	{

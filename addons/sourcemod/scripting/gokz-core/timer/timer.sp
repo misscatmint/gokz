@@ -135,7 +135,7 @@ bool TimerEnd(int client, int course)
 	lastEndTime[client] = GetGameTime();
 	PlayTimerEndSound(client);
 	
-	if (!IsFakeClient(client))
+	if (GOKZ_IsRunner(client))
 	{
 		// Print end timer message
 		Call_GOKZ_OnTimerEndMessage(client, course, time, teleportsUsed, result);
@@ -290,8 +290,10 @@ static bool JustTeleported(int client)
 
 static bool JustLanded(int client)
 {
+	// A landing numbered after now is from before a reconnect that kept the run
+	int landingCmdNum = Movement_GetLandingCmdNum(client);
 	return !gB_OldOnGround[client]
-	 || gI_CmdNum[client] - Movement_GetLandingCmdNum(client) <= GOKZ_TIMER_START_NO_TELEPORT_TICKS;
+	 || (landingCmdNum <= gI_CmdNum[client] && gI_CmdNum[client] - landingCmdNum <= GOKZ_TIMER_START_NO_TELEPORT_TICKS);
 }
 
 static bool JustStartedTimer(int client)

@@ -193,7 +193,7 @@ static void ClearCacheOfSteamID(int steamAccountID)
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientAuthorized(client) && GetSteamAccountID(client) == steamAccountID)
+		if (IsClientAuthorized(client) && GOKZ_GetSteamAccountID(client) == steamAccountID)
 		{
 			ClearCache(client);
 		}

@@ -318,7 +318,7 @@ void OnClientPutInServer_Playback(int client)
 {
 	lastSpectatedBot[client] = -1;
 	
-	if (!IsFakeClient(client) || IsClientSourceTV(client))
+	if (GOKZ_IsRunner(client) || IsClientSourceTV(client))
 	{
 		return;
 	}
@@ -375,7 +375,7 @@ void OnClientDisconnect_Playback(int client)
 
 void OnPlayerRunCmd_Playback(int client, int &buttons, float vel[3], float angles[3])
 {
-	if (!IsFakeClient(client))
+	if (GOKZ_IsRunner(client))
 	{
 		return;
 	}

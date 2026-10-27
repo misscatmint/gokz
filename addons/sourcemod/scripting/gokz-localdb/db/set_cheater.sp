@@ -12,7 +12,8 @@ void DB_SetCheater(int cheaterClient, bool cheater)
 	}
 	
 	gB_Cheater[cheaterClient] = cheater;
-	if (GetSteamAccountID(cheaterClient) == 0)
+	int steamID = GOKZ_GetSteamAccountID(cheaterClient);
+	if (steamID == 0)
 	{
 		gB_CheaterPending[cheaterClient] = cheater;
 		return;
@@ -20,14 +21,14 @@ void DB_SetCheater(int cheaterClient, bool cheater)
 	
 	DataPack data = new DataPack();
 	data.WriteCell(-1);
-	data.WriteCell(GetSteamAccountID(cheaterClient));
+	data.WriteCell(steamID);
 	data.WriteCell(cheater);
 	
 	char query[128];
 	
 	Transaction txn = SQL_CreateTransaction();
 	
-	FormatEx(query, sizeof(query), sql_players_set_cheater, cheater ? 1 : 0, GetSteamAccountID(cheaterClient));
+	FormatEx(query, sizeof(query), sql_players_set_cheater, cheater ? 1 : 0, steamID);
 	txn.AddQuery(query);
 	
 	SQL_ExecuteTransaction(gH_DB, txn, DB_TxnSuccess_SetCheater, DB_TxnFailure_Generic_DataPack, data, DBPrio_High);
@@ -37,7 +38,7 @@ void DB_SetCheaterSteamID(int client, int cheaterSteamID, bool cheater)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (IsClientAuthorized(i) && GetSteamAccountID(i) == cheaterSteamID)
+		if (IsClientAuthorized(i) && GOKZ_GetSteamAccountID(i) == cheaterSteamID)
 		{
 			gB_Cheater[i] = cheater;
 		}

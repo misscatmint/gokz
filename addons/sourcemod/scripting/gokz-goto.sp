@@ -72,6 +72,15 @@ bool GotoPlayer(int client, int target, bool printMessage = true)
 		}
 		return false;
 	}
+	if (GOKZ_GetRunHeld(target))
+	{
+		if (printMessage)
+		{
+			GOKZ_PrintToChat(client, true, "%t", "Player No Longer Valid");
+			GOKZ_PlayErrorSound(client);
+		}
+		return false;
+	}
 	
 	float targetOrigin[3];
 	float targetAngles[3];
@@ -151,12 +160,12 @@ int GotoMenuAddItems(int client, Menu menu)
 	
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (!IsClientInGame(i) || !IsPlayerAlive(i) || i == client)
+		if (!IsClientInGame(i) || !IsPlayerAlive(i) || i == client || GOKZ_GetRunHeld(i))
 		{
 			continue;
 		}
 		
-		if (IsFakeClient(i))
+		if (!GOKZ_IsRunner(i))
 		{
 			FormatEx(display, sizeof(display), "BOT %N", i);
 		}

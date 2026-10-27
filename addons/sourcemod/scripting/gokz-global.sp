@@ -239,8 +239,15 @@ Action FPSKickPlayer(Handle timer, int userid)
 
 public void OnClientPutInServer(int client)
 {
-	gB_GloballyVerified[client] = false;
 	gB_waitingForFPSKick[client] = false;
+
+	// Across a run handover
+	if (GOKZ_GetRunCarriedOver(client))
+	{
+		return;
+	}
+
+	gB_GloballyVerified[client] = false;
 	gF_LastWarn[client] = 0.0;
 	ResetPoints(client);
 	OnClientPutInServer_PrintRecords(client);
@@ -248,7 +255,10 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
-	delete gA_UnverifiedRuns[client];
+	if (!GOKZ_GetRunCarriedOver(client))
+	{
+		delete gA_UnverifiedRuns[client];
+	}
 }
 
 // OnClientAuthorized is apparently too early
@@ -328,7 +338,7 @@ public void GOKZ_OnTimerEnd_Post(int client, int course, float time, int telepor
 	{
 		SendTime(client, course, mode, time, teleportsUsed);
 	}
-	else if (!IsClientAuthorized(client) && gB_InValidRun[client] && GlobalsEnabled(mode))
+	else if (GOKZ_GetSteamAccountID(client) == 0 && gB_InValidRun[client] && GlobalsEnabled(mode))
 	{
 		KeepUnverifiedRun(client, course, mode, time, teleportsUsed);
 	}
@@ -882,11 +892,12 @@ void CheckClientGlobalBan(int client)
 {
 	char steamid[32];
 	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
-	GlobalAPI_GetPlayerBySteamId(CheckClientGlobalBan_Callback, client, steamid);
+	GlobalAPI_GetPlayerBySteamId(CheckClientGlobalBan_Callback, GetClientUserId(client), steamid);
 }
 
-public void CheckClientGlobalBan_Callback(JSON_Object player_json, GlobalAPIRequestData request, int client)
+public void CheckClientGlobalBan_Callback(JSON_Object player_json, GlobalAPIRequestData request, int userid)
 {
+	int client = GetClientOfUserId(userid);
 	if (!IsValidClient(client))
 	{
 		return;
@@ -898,18 +909,19 @@ public void CheckClientGlobalBan_Callback(JSON_Object player_json, GlobalAPIRequ
 		return;
 	}
 	
-	char client_steamid[32], response_steamid[32];
-	GetClientAuthId(client, AuthId_Steam2, client_steamid, sizeof(client_steamid));
+	// The slot may hold the player's run as a bot by now
+	int accountID = GOKZ_GetSteamAccountID(client);
 	
 	if (!player_json.IsArray || player_json.Length != 1)
 	{
-		LogError("Got malformed reply when querying steamid %s", client_steamid);
+		LogError("Got malformed reply when querying account ID %d", accountID);
 		return;
 	}
 	
+	char response_steamid[32];
 	APIPlayer player = view_as<APIPlayer>(view_as<JSON_Array>(player_json).GetObject(0));
 	player.GetSteamId(response_steamid, sizeof(response_steamid));
-	if (!StrEqual(client_steamid, response_steamid))
+	if (Steam2ToAccountID(response_steamid) != accountID)
 	{
 		return;
 	}
@@ -929,6 +941,17 @@ public void CheckClientGlobalBan_Callback(JSON_Object player_json, GlobalAPIRequ
 	{
 		GOKZ_DB_SetCheater(client, true);
 	}
+}
+
+// STEAM_X:Y:Z names account ID 2Z + Y
+static int Steam2ToAccountID(const char[] steamid)
+{
+	char parts[3][16];
+	if (ExplodeString(steamid, ":", parts, sizeof(parts), sizeof(parts[])) != 3)
+	{
+		return 0;
+	}
+	return StringToInt(parts[2]) * 2 + StringToInt(parts[1]);
 }
 
 static void LoadSounds()

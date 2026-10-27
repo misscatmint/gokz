@@ -180,6 +180,12 @@ methodmap KZPlayer < MovementAPIPlayer {
 		GOKZ_PlayErrorSound(this.ID);
 	}
 	
+	property bool Runner {
+		public get() {
+			return GOKZ_IsRunner(this.ID);
+		}
+	}
+	
 	property bool TimerRunning {
 		public get() {
 			return GOKZ_GetTimerRunning(this.ID);
@@ -581,4 +587,24 @@ methodmap KZPlayer < MovementAPIPlayer {
 	
 	#endif
 	// =====[ END SLAY ON END ]=====
-} 
+}
+
+
+
+/**
+ * Gets whether the client's last takeoff came at most maxGroundTicks after the landing before it.
+ * Command numbers restart with each connection, so a landing numbered after the takeoff
+ * is from before a reconnect that kept the run and counts as too long ago. A landing from
+ * before the reconnect survives it, as MovementAPI resets only on spawn, so one first takeoff
+ * can count as a bhop when the player stands still exactly as long as the old connection lasted.
+ *
+ * @param client			Client index.
+ * @param maxGroundTicks	Most ticks on the ground before the takeoff.
+ * @return					Whether the takeoff came soon enough.
+ */
+stock bool GOKZ_TookOffWithin(int client, int maxGroundTicks)
+{
+	int takeoffCmdNum = Movement_GetTakeoffCmdNum(client);
+	int landingCmdNum = Movement_GetLandingCmdNum(client);
+	return landingCmdNum <= takeoffCmdNum && takeoffCmdNum - landingCmdNum <= maxGroundTicks;
+}
