@@ -79,6 +79,7 @@ Allows players to initiate 1v1 duels and multiplayer races.
 ### gokz-rejoin
 
 Holds a disconnected runner's slot and entity for a while (`gokz_rejoin_hold_time`, 30 minutes by default) so they can rejoin and carry on their run where they were. **Nothing is held with `sv_lan 1`, where Steam does not check the rejoining player.**
+A resumed run is submitted to the global API like any other run.
 While held, SourceMod sees a bot in the slot, so votes and player counts leave the player out. Plugins that change map on an empty server count only humans, so they end holds.
 
 ### gokz-replays
