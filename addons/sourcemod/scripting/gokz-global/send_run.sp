@@ -13,6 +13,14 @@ bool deleteRecord[MAXPLAYERS + 1];
 
 void SendTime(int client, int course, float time, int teleportsUsed)
 {
+	// Also for a held run's slot, which SourceMod sees as a bot
+	int accountID = GOKZ_GetSteamAccountID(client);
+	if (accountID == 0)
+	{
+		LogError("Failed to send a time to the global API, %N has no Steam account ID.", client);
+		return;
+	}
+
 	char steamid[32], modeStr[32];
 	KZPlayer player = KZPlayer(client);
 	int mode = player.Mode;
@@ -38,7 +46,8 @@ void SendTime(int client, int course, float time, int teleportsUsed)
 	dp.WriteFloat(time);
 	dp.WriteString(gC_CurrentMap);
 
-	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
+	// As AuthId_Steam2 gives it
+	FormatEx(steamid, sizeof(steamid), "STEAM_1:%d:%d", accountID & 1, accountID >> 1);
 	GOKZ_GL_GetModeString(mode, modeStr, sizeof(modeStr));
 	GlobalAPI_CreateRecord(SendTimeCallback, dp, steamid, gI_MapID, modeStr, course, 128, teleportsUsed, time);
 }

@@ -27,6 +27,7 @@ Database gH_DB = null;
 DatabaseType g_DBType = DatabaseType_None;
 bool gB_ClientSetUp[MAXPLAYERS + 1];
 bool gB_ClientPostAdminChecked[MAXPLAYERS + 1];
+bool gB_RunCarriedOver[MAXPLAYERS + 1];
 bool gB_WarnedUnverified[MAXPLAYERS + 1];
 bool gB_Cheater[MAXPLAYERS + 1];
 bool gB_CheaterPending[MAXPLAYERS + 1]; // flagged before Steam verified them
@@ -112,6 +113,20 @@ public void OnMapEnd()
 	gB_MapSetUp = false;
 }
 
+// The carried-over flag is only set during the handover, which can end before the callbacks below
+public void OnClientConnected(int client)
+{
+	gB_RunCarriedOver[client] = GOKZ_GetRunCarriedOver(client);
+	// The slot's last disconnect may have kept them for a carried-over run that then ended
+	if (!gB_RunCarriedOver[client])
+	{
+		gB_ClientSetUp[client] = false;
+		gB_CheaterPending[client] = false;
+		gB_WarnedUnverified[client] = false;
+		gB_ClientPostAdminChecked[client] = false;
+	}
+}
+
 public void OnClientAuthorized(int client, const char[] auth)
 {
 	DB_SetupClient(client);
@@ -122,7 +137,8 @@ public void OnClientPostAdminCheck(int client)
 	// We need this after OnClientPutInServer cause that's where the VBs get reset
 	gB_ClientPostAdminChecked[client] = true;
 	
-	if (gB_MapSetUp && GOKZ_GetOption(client, gC_DBOptionNames[DBOption_AutoLoadTimerSetup]) == DBOption_Enabled)
+	if (gB_MapSetUp && GOKZ_GetOption(client, gC_DBOptionNames[DBOption_AutoLoadTimerSetup]) == DBOption_Enabled
+		 && !gB_RunCarriedOver[client])
 	{
 		DB_LoadTimerSetup(client);
 	}
@@ -135,7 +151,8 @@ public void GOKZ_DB_OnClientSetup(int client, int steamID, bool cheater)
 
 public void GOKZ_OnOptionsLoaded(int client)
 {
-	if (gB_MapSetUp && gB_ClientPostAdminChecked[client] && GOKZ_GetOption(client, gC_DBOptionNames[DBOption_AutoLoadTimerSetup]) == DBOption_Enabled)
+	if (gB_MapSetUp && gB_ClientPostAdminChecked[client] && GOKZ_GetOption(client, gC_DBOptionNames[DBOption_AutoLoadTimerSetup]) == DBOption_Enabled
+		 && !gB_RunCarriedOver[client])
 	{
 		DB_LoadTimerSetup(client);
 	}
@@ -143,10 +160,13 @@ public void GOKZ_OnOptionsLoaded(int client)
 
 public void OnClientDisconnect(int client)
 {
-	gB_ClientSetUp[client] = false;
-	gB_CheaterPending[client] = false;
-	gB_WarnedUnverified[client] = false;
-	gB_ClientPostAdminChecked[client] = false;
+	if (!GOKZ_GetRunCarriedOver(client))
+	{
+		gB_ClientSetUp[client] = false;
+		gB_CheaterPending[client] = false;
+		gB_WarnedUnverified[client] = false;
+		gB_ClientPostAdminChecked[client] = false;
+	}
 }
 
 public void GOKZ_OnCourseRegistered(int course)

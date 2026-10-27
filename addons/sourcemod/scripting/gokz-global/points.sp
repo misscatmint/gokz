@@ -55,6 +55,12 @@ int GetFinishes(int client, int mode, int timeType)
 // Note: This only gets 128 tick records
 void UpdatePoints(int client, bool force = false, int mode = -1)
 {
+	// A held run's slot is a bot, with no SteamID for the API
+	if (GOKZ_GetRunHeld(client))
+	{
+		return;
+	}
+	
 	if (requestsInProgress[client] != 0)
 	{
 		return;

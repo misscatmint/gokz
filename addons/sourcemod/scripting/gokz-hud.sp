@@ -146,7 +146,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	{
 		SetHUDInfo(player, info, cmdnum);
 	}
-	else if (targetPlayer.ID != -1 && !targetPlayer.Fake)
+	else if (targetPlayer.ID != -1 && targetPlayer.Runner)
 	{
 		SetHUDInfo(targetPlayer, info, cmdnum);
 	}
@@ -309,7 +309,7 @@ static void SetHUDInfo(KZPlayer player, HUDInfo info, int cmdnum)
 	info.OnLadder = player.OnLadder;
 	info.Noclipping = player.Noclipping;
 	info.Ducking = Movement_GetDucking(player.ID);
-	info.HitBhop = (Movement_GetJumped(player.ID) && Movement_GetTakeoffCmdNum(player.ID) == cmdnum) && Movement_GetTakeoffCmdNum(player.ID) - Movement_GetLandingCmdNum(player.ID) <= HUD_MAX_BHOP_GROUND_TICKS;
+	info.HitBhop = (Movement_GetJumped(player.ID) && Movement_GetTakeoffCmdNum(player.ID) == cmdnum) && GOKZ_TookOffWithin(player.ID, HUD_MAX_BHOP_GROUND_TICKS);
 	info.Speed = player.Speed;
 	info.ID = player.ID;
 	info.Jumped = player.Jumped;

@@ -151,7 +151,7 @@ int SpecMenuAddItems(int client, Menu menu, bool useFilter, char[] filter)
 			FormatEx(display, sizeof(display), "%N", i);		
 			if (StrContains(display, filter, false) != -1) 
 			{
-				if (IsFakeClient(i))
+				if (!GOKZ_IsRunner(i))
 				{
 					FormatEx(display, sizeof(display), "BOT %N", i);
 				}
@@ -163,7 +163,7 @@ int SpecMenuAddItems(int client, Menu menu, bool useFilter, char[] filter)
 		}
 		else
 		{
-			if (IsFakeClient(i))
+			if (!GOKZ_IsRunner(i))
 			{
 				FormatEx(display, sizeof(display), "BOT %N", i);
 			}

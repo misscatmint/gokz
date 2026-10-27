@@ -161,7 +161,7 @@ static void UpdateTPMenu(int client, HUDInfo info)
 	else if (player.ObserverTarget != -1) // If the player is spectating someone else
 	{
 		// Check if the replay plugin wants to display the replay control menu.
-		if (!(IsFakeClient(player.ObserverTarget) && gB_GOKZReplays && GOKZ_RP_UpdateReplayControlMenu(client)))
+		if (GOKZ_IsRunner(player.ObserverTarget) || !gB_GOKZReplays || !GOKZ_RP_UpdateReplayControlMenu(client))
 		{
 			ShowPanel(player, info);
 		}

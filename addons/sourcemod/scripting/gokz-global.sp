@@ -237,6 +237,12 @@ Action FPSKickPlayer(Handle timer, int userid)
 
 public void OnClientPutInServer(int client)
 {
+	// Across a run handover
+	if (GOKZ_GetRunCarriedOver(client))
+	{
+		return;
+	}
+
 	gB_GloballyVerified[client] = false;
 	gB_waitingForFPSKick[client] = false;
 	gF_LastWarn[client] = 0.0;

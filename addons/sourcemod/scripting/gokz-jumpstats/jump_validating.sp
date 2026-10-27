@@ -57,7 +57,7 @@ void OnPluginStart_JumpValidating()
 static MRESReturn DHook_ProcessMovementPost(Handle hParams)
 {
 	int client = DHookGetParam(hParams, 1);
-	if (!IsValidClient(client) || IsFakeClient(client))
+	if (!IsValidClient(client) || !GOKZ_IsRunner(client))
 	{
 		return MRES_Ignored;
 	}

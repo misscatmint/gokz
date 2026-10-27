@@ -156,7 +156,7 @@ public void OnEntityCreated(int entity, const char[] classname)
 
 public Action HookTriggers(int entity, int other)
 {
-	if (other >= 1 && other <= MaxClients && IsFakeClient(other))
+	if (other >= 1 && other <= MaxClients && !GOKZ_IsRunner(other))
 	{
 		return Plugin_Handled;
 	}
@@ -195,7 +195,10 @@ public MRESReturn DHooks_OnTeamFull_Pre(Address pThis, DHookReturn hReturn, DHoo
 public void OnClientPutInServer(int client)
 {
 	OnClientPutInServer_Playback(client);
-	OnClientPutInServer_Recording(client);
+	if (!GOKZ_GetRunCarriedOver(client))
+	{
+		OnClientPutInServer_Recording(client);
+	}
 	HookClientEvents(client);
 }
 
@@ -207,13 +210,16 @@ public void OnClientAuthorized(int client, const char[] auth)
 public void OnClientDisconnect(int client)
 {
 	OnClientDisconnect_Playback(client);
-	OnClientDisconnect_Recording(client);
+	if (!GOKZ_GetRunCarriedOver(client))
+	{
+		OnClientDisconnect_Recording(client);
+	}
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
 	OnPlayerRunCmd_Recording(client);
-	if (IsFakeClient(client))
+	if (!GOKZ_IsRunner(client))
 	{
 		OnPlayerRunCmd_Playback(client, buttons, vel, angles);
 		return Plugin_Changed;
@@ -296,7 +302,7 @@ public void GOKZ_DB_OnJumpstatPB(int client, int jumptype, int mode, float dista
 
 public void GOKZ_OnOptionsLoaded(int client)
 {
-	if (IsFakeClient(client))
+	if (!GOKZ_IsRunner(client))
 	{
 		GOKZ_OnOptionsLoaded_Playback(client);
 	}

@@ -195,6 +195,12 @@ public void OnMapStart()
 
 public void OnClientPutInServer(int client)
 {
+	// Across a run handover
+	if (GOKZ_GetRunCarriedOver(client))
+	{
+		return;
+	}
+
 	gF_LastLoadlocTime[client] = 0.0;
 	gI_MostRecentLocation[client] = -1;
 }

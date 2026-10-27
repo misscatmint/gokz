@@ -144,7 +144,7 @@ void OnPlayerRunCmdPost_JumpBeam(int targetClient)
 	
 	KZPlayer targetPlayer = KZPlayer(targetClient);
 	
-	if (targetPlayer.Fake || !targetPlayer.Alive || targetPlayer.OnGround || !targetPlayer.ValidJump)
+	if (!targetPlayer.Runner || !targetPlayer.Alive || targetPlayer.OnGround || !targetPlayer.ValidJump)
 	{
 		return;
 	}

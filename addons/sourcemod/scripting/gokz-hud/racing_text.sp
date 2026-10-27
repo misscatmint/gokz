@@ -87,7 +87,7 @@ static void UpdateRacingText(int client)
 	else
 	{
 		KZPlayer targetPlayer = KZPlayer(player.ObserverTarget);
-		if (targetPlayer.ID != -1 && !targetPlayer.Fake)
+		if (targetPlayer.ID != -1 && targetPlayer.Runner)
 		{
 			ShowRacingText(player, targetPlayer);
 		}

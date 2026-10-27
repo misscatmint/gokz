@@ -28,6 +28,8 @@ public Plugin myinfo =
 bool gB_BaseComm;
 char gC_PlayerTags[MAXPLAYERS + 1][32];
 char gC_PlayerTagColors[MAXPLAYERS + 1][16];
+bool gB_DisconnectReasonStored[MAXPLAYERS + 1];
+char gC_DisconnectReason[MAXPLAYERS + 1][128];
 
 ConVar gCV_gokz_chat_processing;
 ConVar gCV_gokz_connection_messages;
@@ -87,11 +89,17 @@ public void OnClientConnected(int client)
 {
 	gC_PlayerTags[client][0] = '\0';
 	gC_PlayerTagColors[client][0] = '\0';
+	gB_DisconnectReasonStored[client] = false;
 }
 
 public void OnClientPutInServer(int client)
 {
 	PrintConnectMessage(client);
+}
+
+public void OnClientDisconnect(int client)
+{
+	PrintDisconnectMessage(client);
 }
 
 public Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast) // player_disconnect pre hook
@@ -100,7 +108,8 @@ public Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadc
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (IsValidClient(client))
 	{
-		PrintDisconnectMessage(client, event);
+		event.GetString("reason", gC_DisconnectReason[client], sizeof(gC_DisconnectReason[]));
+		gB_DisconnectReasonStored[client] = true;
 	}
 	return Plugin_Continue;
 }
@@ -220,7 +229,7 @@ void SanitiseChatInput(char[] message, int maxlength)
 
 void PrintConnectMessage(int client)
 {
-	if (!gCV_gokz_connection_messages.BoolValue || IsFakeClient(client))
+	if (!gCV_gokz_connection_messages.BoolValue || IsFakeClient(client) || GOKZ_GetRunCarriedOver(client))
 	{
 		return;
 	}
@@ -228,16 +237,18 @@ void PrintConnectMessage(int client)
 	GOKZ_PrintToChatAll(false, "%t", "Client Connection Message", client);
 }
 
-void PrintDisconnectMessage(int client, Event event) // Hooked to player_disconnect event
+// Map changes fire no player_disconnect, so they store no reason
+void PrintDisconnectMessage(int client)
 {
-	if (!gCV_gokz_connection_messages.BoolValue || IsFakeClient(client))
+	bool reasonStored = gB_DisconnectReasonStored[client];
+	gB_DisconnectReasonStored[client] = false;
+	if (!reasonStored || !gCV_gokz_connection_messages.BoolValue || !GOKZ_IsRunner(client)
+		 || GOKZ_GetRunCarriedOver(client) || GOKZ_GetRunHeld(client))
 	{
 		return;
 	}
 	
-	char reason[128];
-	event.GetString("reason", reason, sizeof(reason));
-	GOKZ_PrintToChatAll(false, "%t", "Client Disconnection Message", client, reason);
+	GOKZ_PrintToChatAll(false, "%t", "Client Disconnection Message", client, gC_DisconnectReason[client]);
 }
 
 

@@ -50,6 +50,11 @@ void CreateNatives()
 	CreateNative("GOKZ_GetCourse", Native_GetCourse);
 	CreateNative("GOKZ_SetCourse", Native_SetCourse);
 	CreateNative("GOKZ_GetPaused", Native_GetPaused);
+	CreateNative("GOKZ_GetRunCarriedOver", Native_GetRunCarriedOver);
+	CreateNative("GOKZ_SetRunCarriedOver", Native_SetRunCarriedOver);
+	CreateNative("GOKZ_GetRunHeld", Native_GetRunHeld);
+	CreateNative("GOKZ_GetHeldAccountID", Native_GetHeldAccountID);
+	CreateNative("GOKZ_SetRunHeld", Native_SetRunHeld);
 	CreateNative("GOKZ_GetTime", Native_GetTime);
 	CreateNative("GOKZ_SetTime", Native_SetTime);
 	CreateNative("GOKZ_InvalidateRun", Native_InvalidateRun);
@@ -432,6 +437,33 @@ public int Native_SetCourse(Handle plugin, int numParams)
 public int Native_GetPaused(Handle plugin, int numParams)
 {
 	return view_as<int>(GetPaused(GetNativeCell(1)));
+}
+
+public int Native_GetRunCarriedOver(Handle plugin, int numParams)
+{
+	return view_as<int>(GetRunCarriedOver(GetNativeCell(1)));
+}
+
+public int Native_SetRunCarriedOver(Handle plugin, int numParams)
+{
+	SetRunCarriedOver(GetNativeCell(1), GetNativeCell(2));
+	return 0;
+}
+
+public int Native_GetRunHeld(Handle plugin, int numParams)
+{
+	return view_as<int>(GetRunHeld(GetNativeCell(1)));
+}
+
+public int Native_GetHeldAccountID(Handle plugin, int numParams)
+{
+	return GetHeldAccountID(GetNativeCell(1));
+}
+
+public int Native_SetRunHeld(Handle plugin, int numParams)
+{
+	SetRunHeld(GetNativeCell(1), GetNativeCell(2), GetNativeCell(3));
+	return 0;
 }
 
 public int Native_GetTime(Handle plugin, int numParams)
