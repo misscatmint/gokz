@@ -547,6 +547,7 @@ public MRESReturn DHooks_OnProcessSignonState(Address baseClient, DHookReturn hR
 
 	connectDeferred[client] = false;
 	deferredConnectClient = client;
+	OnDeferredConnect(client);
 	bool accepted = SDKCall(checkConnectCall, baseClient + view_as<Address>(offsetCheckConnectThis));
 	deferredConnectClient = 0;
 	if (accepted)
