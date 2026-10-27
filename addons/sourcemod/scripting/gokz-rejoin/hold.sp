@@ -350,6 +350,11 @@ Action OnPlayerDisconnect_Hold(int client, const char[] reason, const char[] pla
 	{
 		return Plugin_Handled;
 	}
+	// The recycled slot, already held by the same address reconnect in OnEngineRemovesClient
+	if (InSameAddressReconnect() && client == GetRoutedClient())
+	{
+		return Plugin_Handled;
+	}
 	// RemoveClientFromGame gets no reason
 	strcopy(removalReason[client], sizeof(removalReason[]), reason);
 	// Kicked from outside: the engine removes its bot and the hold ends
@@ -474,7 +479,7 @@ bool OnEngineRemovesClient(int client)
 		return true;
 	}
 
-	// Same address reconnect: no player_disconnect, the slot is reused
+	// Same address reconnect: the engine recycles the slot, and its player_disconnect is blocked
 	if (InSameAddressReconnect() && CanHold(client)
 		 && GetConnectingAccountID() != 0 && GetSteamAccountID(client, false) == GetConnectingAccountID())
 	{
