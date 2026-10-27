@@ -41,6 +41,7 @@ static bool rejoined[MAXPLAYERS + 1];
 static bool restoreAngles[MAXPLAYERS + 1];
 static float heldAngles[MAXPLAYERS + 1][3];
 static int blockedEvents[MAXPLAYERS + 1];
+static char removalReason[MAXPLAYERS + 1][128];
 static bool endHoldOnRemove[MAXPLAYERS + 1];
 static bool kicked[MAXPLAYERS + 1];
 static bool engineBot[MAXPLAYERS + 1];
@@ -199,6 +200,7 @@ void Release(int client, const char[] reason = "Disconnect", bool force = false)
 	releasingClient = client;
 	PublishHold(client);
 	LogMessage("Released held slot of \"%s\" <%s>", heldSlot[client].name, heldSlot[client].networkID);
+	AnnounceHoldEnd(client, reason);
 
 	// Its player_disconnect and RemoveClientFromGame then run as for any bot
 	if (wasEngineBot)
@@ -359,6 +361,8 @@ Action OnPlayerDisconnect_Hold(int client, const char[] reason, const char[] pla
 	{
 		return Plugin_Handled;
 	}
+	// RemoveClientFromGame gets no reason
+	strcopy(removalReason[client], sizeof(removalReason[]), reason);
 	// Kicked from outside: the engine removes its bot and the hold ends
 	if (held[client] && engineBot[client])
 	{
@@ -439,6 +443,7 @@ bool OnEngineRemovesClient(int client)
 	if (endHoldOnRemove[client] && engineBot[client])
 	{
 		LogMessage("Held slot of \"%s\" <%s> was kicked", heldSlot[client].name, heldSlot[client].networkID);
+		AnnounceHoldEnd(client, removalReason[client]);
 		Call_OnHoldEnd(client);
 		EndHold(client);
 		UpdateHibernation();
@@ -448,6 +453,7 @@ bool OnEngineRemovesClient(int client)
 	if (endHoldOnRemove[client])
 	{
 		LogMessage("Rejoin of \"%s\" <%s> was kicked, releasing their held slot", heldSlot[client].name, heldSlot[client].networkID);
+		AnnounceHoldEnd(client, removalReason[client]);
 		Call_OnHoldEnd(client);
 		EndHold(client);
 		releasingClient = client;
@@ -463,6 +469,7 @@ bool OnEngineRemovesClient(int client)
 	if (held[client] && IsRunningDeferredConnect(client))
 	{
 		LogMessage("Rejoin of \"%s\" <%s> was rejected, releasing their held slot", heldSlot[client].name, heldSlot[client].networkID);
+		AnnounceHoldEnd(client, removalReason[client]);
 		Call_OnHoldEnd(client);
 		EndHold(client);
 		UpdateHibernation();
@@ -643,6 +650,14 @@ static bool AnnounceConnections()
 		connectionMessages = FindConVar("gokz_connection_messages");
 	}
 	return connectionMessages == null || connectionMessages.BoolValue;
+}
+
+static void AnnounceHoldEnd(int client, const char[] reason)
+{
+	if (AnnounceConnections())
+	{
+		GOKZ_PrintToChatAll(false, "%t", "Held Run Released", heldSlot[client].name, reason);
+	}
 }
 
 static bool IsLeaveReason(const char[] reason, const char[] playerName)

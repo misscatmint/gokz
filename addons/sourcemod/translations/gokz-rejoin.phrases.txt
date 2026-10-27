@@ -40,6 +40,12 @@
 		"#format"	"{1:N}"
 		"en"		"{lime}{1}{grey} has joined the server. Their timer was kept."
 	}
+	"Held Run Released"
+	{
+		// Bill's timer is no longer kept (Run hold expired).
+		"#format"	"{1:s},{2:s}"
+		"en"		"{lime}{1}{grey}'s timer is no longer kept ({2})."
+	}
 
 	// =====[ RUN ENDED WHILE AWAY ]=====
 	"Away Run End (Finished Map)"
