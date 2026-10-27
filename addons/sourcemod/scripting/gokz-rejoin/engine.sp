@@ -12,7 +12,7 @@ enum
 #define CROSSPLAYPLATFORM_PC 1
 #define OFFSET_ICLIENT 4 // CBaseClient's IClient subobject, which ConnectClient returns
 
-static Address gameServer; // sv, from the first RemoveClientFromGame; nothing is held before that
+static Address gameServer; // sv
 static int offsetClients;
 static int offsetClientCount;
 static int offsetUserIDCounter;
@@ -194,6 +194,12 @@ void OnPluginStart_Engine()
 	if (gameData == null)
 	{
 		SetFailState("Failed to load gokz-rejoin gamedata");
+	}
+
+	gameServer = gameData.GetAddress("sv");
+	if (gameServer == Address_Null)
+	{
+		SetFailState("Failed to get sv address");
 	}
 
 	offsetClients = GetOffsetOrFail(gameData, "CBaseServer::m_Clients");
@@ -447,8 +453,6 @@ public MRESReturn DHooks_OnGetFreeClientPost(Address server, DHookReturn hReturn
 
 public MRESReturn DHooks_OnRemoveClientFromGame(Address server, DHookParam hParams)
 {
-	gameServer = server;
-
 	int client = GetClientOfBaseClient(hParams.Get(1));
 	if (client == 0 || !OnEngineRemovesClient(client))
 	{

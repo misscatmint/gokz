@@ -103,6 +103,24 @@
 			}
 		}
 
+		"Addresses"
+		{
+			// The CGameServer that CreateFakeClient uses, found as SourceMod's sdktools finds it
+			"sv"
+			{
+				"windows"
+				{
+					"signature"	"CVEngineServer::CreateFakeClient"
+					"read"	"8"
+				}
+				"linux"
+				{
+					"signature"	"CVEngineServer::CreateFakeClient"
+					"read"	"11"
+				}
+			}
+		}
+
 		"Signatures"
 		{
 			"CreateInterface"
@@ -116,6 +134,12 @@
 				"library"	"engine"
 				"windows"	"@CreateInterface"
 				"linux"		"@CreateInterface"
+			}
+			"CVEngineServer::CreateFakeClient"
+			{
+				"library"	"engine"
+				"windows"	"\x55\x8B\xEC\x56\xFF\x2A\x2A\xB9\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B"
+				"linux"		"\x55\x89\xE5\x53\x83\xEC\x0C\xFF\x75\x0C\x68\x2A\x2A\x2A\x2A"
 			}
 			"CBaseServer::ConnectClient"
 			{
