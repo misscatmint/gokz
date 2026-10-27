@@ -303,7 +303,7 @@ void ReleaseAllHolds()
 			InsertServerCommand("kickid %d", heldSlot[client].userID);
 			ServerExecute();
 		}
-		Release(client, _, true);
+		Release(client, "Plugin unloaded", true);
 		// gokz-core would otherwise still report a rejoin after this plugin unloads
 		if (rejoined[client])
 		{
