@@ -620,6 +620,11 @@ bool OnPlayerRunCmd_Hold(int client, float angles[3])
 	{
 		GOKZ_PrintToChat(client, true, "%t", paused ? "Rejoined Held Slot (Paused, Ran)" : "Rejoined Held Slot (Ran)", GOKZ_FormatTime(ranFor));
 	}
+	// The resumed timer never starts again, so gokz-localdb's warning at the start never shows
+	if (GetSteamAccountID(client) == 0)
+	{
+		GOKZ_PrintToChat(client, true, "%t", "Rejoined Held Slot (Unverified)");
+	}
 	return true;
 }
 

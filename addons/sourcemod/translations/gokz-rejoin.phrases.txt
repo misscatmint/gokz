@@ -25,6 +25,10 @@
 		"#format"	"{1:s}"
 		"en"		"{grey}Welcome back, your timer ran on for {default}{1}{grey} until you came to a stop and it paused. Type {default}!pause{grey} to resume."
 	}
+	"Rejoined Held Slot (Unverified)"
+	{
+		"en"		"{grey}Steam has not verified you yet. Your time is only saved if it does before you finish."
+	}
 
 
 	// =====[ ANNOUNCEMENTS ]=====
