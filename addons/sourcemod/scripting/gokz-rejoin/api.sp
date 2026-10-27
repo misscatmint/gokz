@@ -50,7 +50,7 @@ public int Native_Release(Handle plugin, int numParams)
 	{
 		return ThrowNativeError(SP_ERROR_PARAM, "Invalid client index %d", client);
 	}
-	Release(client);
+	Release(client, "Released by a plugin");
 	return 0;
 }
 
