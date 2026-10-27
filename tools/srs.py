@@ -86,13 +86,21 @@ SMX_VERSION = 0x0102
 SMX_COMPRESSION_ZLIB = 1
 
 def git(*args: str) -> str:
-    """Run git and return its trimmed stdout."""
+    """Run a plumbing command and return its trimmed stdout."""
     return subprocess.run(['git', *args], check=True, stdout=subprocess.PIPE,
                           text=True).stdout.strip()
 
 def git_ok(*args: str) -> bool:
-    """Run git quietly and return whether it succeeded."""
+    """Run a plumbing command quietly and return whether it succeeded."""
     return subprocess.run(['git', *args], capture_output=True).returncode == 0
+
+def git_run(*args: str) -> None:
+    """Run a command that changes the repo, on the terminal.
+
+    Nothing is captured, so editors, signing passphrase prompts and git's own
+    messages reach the user.
+    """
+    subprocess.run(['git', *args], check=True)
 
 def branch_exists(name: str) -> bool:
     """Return whether a local branch exists."""
@@ -157,9 +165,20 @@ def build(rev: str, out: Path, *,
         sys.exit('SMDIR must be a SourceMod scripting folder, the one with '
                  'spcomp64 and include/ in it')
     out.mkdir()
-    archive = subprocess.run(['git', 'archive', rev], check=True,
-                             capture_output=True).stdout
-    subprocess.run(['tar', '-x', '-C', str(out)], input=archive, check=True)
+    # Raw blobs, so no git config, attributes or filters can change the files.
+    listing = subprocess.run(['git', 'ls-tree', '-r', '-z', rev], check=True,
+                             stdout=subprocess.PIPE).stdout
+    for entry in filter(None, listing.split(b'\0')):
+        meta, name = entry.split(b'\t', 1)
+        mode, kind, oid = meta.decode().split()
+        if kind != 'blob' or mode == '120000':
+            sys.exit(f'{os.fsdecode(name)} at {rev} is a {kind} ({mode}), '
+                     'only files can be exported')
+        path = out / os.fsdecode(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(subprocess.run(['git', 'cat-file', 'blob', oid],
+                                        check=True,
+                                        stdout=subprocess.PIPE).stdout)
     scripting = out / SCRIPTING
     (out / PLUGINS).mkdir(exist_ok=True)
     # spcomp records includes by the path it found them through, and its stack
@@ -210,16 +229,16 @@ def rebuild() -> None:
             sys.exit(f'no such branch: {branch}')
 
     print(f'building srs-dev from {tag} with {", ".join(branches)}')
-    git('switch', '--quiet', '-C', 'srs-dev', tag)
+    git_run('switch', '--quiet', '-C', 'srs-dev', tag)
     # rerere replays conflict resolutions recorded by earlier rebuilds.
     rerere = ['-c', 'rerere.enabled=true', '-c', 'rerere.autoUpdate=true']
     for branch in branches:
         if not subprocess.run(['git', *rerere, 'merge', '--no-edit',
                                branch]).returncode:
             continue
-        if git('diff', '--name-only', '--diff-filter=U'):
+        if git('diff-files', '--name-only', '--diff-filter=U'):
             sys.exit('resolve the conflict, commit it, then rerun')
-        git(*rerere, 'commit', '--quiet', '--no-edit')
+        git_run(*rerere, 'commit', '--quiet', '--no-edit')
     print('srs-dev is built. Test it, then release it:\n'
           '  tools/srs.py check    (optional, just the allowlist check)\n'
           '  tools/srs.py release')
@@ -251,7 +270,7 @@ def check(base: str) -> list[str]:
     changed = sorted(name for name in upstream.keys() | srs.keys()
                      if srs.get(name) != upstream.get(name))
     print('plugins that differ from upstream:', ', '.join(changed) or 'none')
-    gamedata = git('diff', '--name-only', base, 'HEAD', '--',
+    gamedata = git('diff-tree', '-r', '--name-only', base, 'HEAD', '--',
                    GAMEDATA).splitlines()
     forbidden = [
         *(name for name in changed if name not in ALLOWED or name not in srs),
@@ -267,7 +286,7 @@ def release() -> None:
     """Check srs-dev, tag it as the next srs release and move srs to it."""
     if not branch_exists('srs-dev'):
         sys.exit('no srs-dev branch, run rebuild first')
-    git('switch', '--quiet', 'srs-dev')
+    git_run('switch', '--quiet', 'srs-dev')
     tag = base_tag('HEAD')
     if tag is None:
         sys.exit("can't find the upstream release srs-dev is built on")
@@ -287,13 +306,14 @@ def release() -> None:
         path.write_bytes(GOKZ_INCLUDE.sub(rb'\g<0>' + SRS_INCLUDE, source,
                                           count=1))
     if pending:
-        git('commit', '--quiet', '-m',
-            'Add the srs version suffix to plugins changed by srs',
-            '--', *map(str, pending))
-    released = git('tag', '--list', '*-srs*',
-                   '--sort=-version:refname').splitlines()
-    if released and git_ok('diff', '--quiet', released[0], 'HEAD', '--', '.',
-                           f':(exclude){SRS_INC}'):
+        git_run('commit', '--quiet', '-m',
+                'Add the srs version suffix to plugins changed by srs',
+                '--', *map(str, pending))
+    released = git('for-each-ref', '--sort=-version:refname',
+                   '--format=%(refname:short)',
+                   'refs/tags/*-srs*').splitlines()
+    if released and git_ok('diff-tree', '--quiet', '-r', released[0], 'HEAD',
+                           '--', '.', f':(exclude){SRS_INC}'):
         sys.exit(f"srs-dev's build is the same as {released[0]}'s")
 
     srs_inc = Path(SRS_INC).read_text()
@@ -306,22 +326,22 @@ def release() -> None:
     if number != int(define[2]):
         Path(SRS_INC).write_text(
             srs_inc.replace(define[0], f'{define[1]}{number}"'))
-        git('commit', '--quiet', '-m', f'Bump the srs version to -srs{number}',
-            '--', SRS_INC)
+        git_run('commit', '--quiet', '-m',
+                f'Bump the srs version to -srs{number}', '--', SRS_INC)
 
     name = f'{tag}-srs{number}'
-    git('branch', '-f', 'srs', 'HEAD')
-    git('tag', name)
+    git_run('branch', '-f', 'srs', 'HEAD')
+    git_run('tag', '-m', name, name)
     print(f'released {name}, push it with:\n'
           f'  git push --force-with-lease origin srs {name}')
 
 def dist() -> None:
     """Write the release zips of HEAD, named after its srs tag if it has one."""
-    tag = subprocess.run(
-        ['git', 'describe', '--tags', '--exact-match', '--match', '*-srs*',
-         'HEAD'], capture_output=True, text=True).stdout.strip()
-    if tag:
-        name = f'v{tag}'
+    tags = git('for-each-ref', '--points-at', 'HEAD',
+               '--sort=-version:refname', '--format=%(refname:short)',
+               'refs/tags/*-srs*').splitlines()
+    if tags:
+        name = f'v{tags[0]}'
     else:
         base = check_base()
         # A fixed length, since git's short hashes grow with the repo.
@@ -329,7 +349,9 @@ def dist() -> None:
         name = f'v{base}-dev-{commit}' if tag_exists(base) else f'dev-{commit}'
 
     # Everything time-dependent comes from the commit, so builds match.
-    when = datetime.fromtimestamp(int(git('log', '-1', '--format=%ct')), UTC)
+    when = datetime.fromtimestamp(
+        int(git('rev-list', '-1', '--no-commit-header', '--format=%ct',
+                'HEAD')), UTC)
     with tempfile.TemporaryDirectory() as temp:
         tree = Path(temp, 'tree')
         _ = build('HEAD', tree, stamp=(when.strftime('%m/%d/%Y'),
@@ -366,7 +388,12 @@ def main() -> None:
 
     try:
         os.chdir(git('rev-parse', '--show-toplevel'))
-        if git('status', '--porcelain', '--untracked-files=no'):
+        # Without a refresh, files touched but not changed count as modified.
+        # It fails on unmerged files, which diff-files reports below.
+        subprocess.run(['git', 'update-index', '-q', '--refresh'],
+                       capture_output=True)
+        if not (git_ok('diff-files', '--quiet')
+                and git_ok('diff-index', '--cached', '--quiet', 'HEAD', '--')):
             sys.exit('uncommitted changes or a merge in progress, finish or '
                      'abort it first')
         if command == 'rebuild':
