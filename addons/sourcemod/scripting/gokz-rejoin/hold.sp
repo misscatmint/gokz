@@ -34,7 +34,6 @@ enum
 static HeldSlot heldSlot[MAXPLAYERS + 1];
 static bool held[MAXPLAYERS + 1];
 static bool rejoining[MAXPLAYERS + 1];
-static bool rejoined[MAXPLAYERS + 1];
 static bool restoreAngles[MAXPLAYERS + 1];
 static float heldAngles[MAXPLAYERS + 1][3];
 static int blockedEvents[MAXPLAYERS + 1];
@@ -45,7 +44,7 @@ static float nextPauseAttempt[MAXPLAYERS + 1];
 static int lastCmdNum[MAXPLAYERS + 1];
 static float timeAtLastInput[MAXPLAYERS + 1]; // timer time at the player's last own command
 static int releasingClient;
-static int handingOver;
+static bool handingOver[MAXPLAYERS + 1]; // what gokz-core reports as a carried-over run
 static int savedHibernateWhenEmpty = -1;
 static bool settingHibernation;
 static bool adminSetHibernation;
@@ -68,12 +67,6 @@ bool IsEngineBot(int client)
 bool IsRejoining(int client)
 {
 	return client >= 1 && client <= MaxClients && rejoining[client];
-}
-
-// Also while the slot is handed to SourceMod as a bot
-bool IsRejoin(int client)
-{
-	return rejoined[client] || client == handingOver;
 }
 
 int GetHeldUserID(int client)
@@ -252,18 +245,13 @@ void ReleaseAllHolds()
 			DisconnectEngineClient(client, "Plugin unloaded");
 		}
 		Release(client, "Plugin unloaded", true);
-		// gokz-core would otherwise still report a rejoin after this plugin unloads
-		if (rejoined[client])
-		{
-			rejoined[client] = false;
-			PublishHold(client);
-		}
 	}
 	// No frame follows an unload
 	RestoreHibernation();
 }
 
-// SourceMod already disconnected everyone; level shutdown frees the entity
+// SourceMod already disconnected everyone. Players' entities are freed later by InactivateClients
+// through RemoveClientFromGame, and a held engine bot's edict pointer is only cleared by CGameClient::Clear
 void DropAllHolds()
 {
 	for (int client = 1; client <= MaxClients; client++)
@@ -341,15 +329,13 @@ Action OnPlayerDisconnect_Hold(int client, const char[] reason, const char[] pla
 		// Steam session refuses the account's retries, as the fake flag keeps the same-address
 		// recycle off this slot
 		rejoining[client] = false;
-		rejoined[client] = false;
+		handingOver[client] = false;
 		PublishHold(client);
 		blockedEvents[client] = 0;
 		UnhookRejoinConnection(client);
 		return Plugin_Handled;
 	}
 
-	rejoined[client] = false;
-	PublishHold(client);
 	blockedEvents[client] = 0;
 	if (!leaving)
 	{
@@ -438,8 +424,6 @@ bool OnEngineRemovesClient(int client)
 		return true;
 	}
 
-	rejoined[client] = false;
-	PublishHold(client);
 	blockedEvents[client] = 0;
 	return false;
 }
@@ -453,8 +437,6 @@ void OnRejoinRefused(int client)
 void OnRejoinRouted(int client)
 {
 	rejoining[client] = true;
-	rejoined[client] = true;
-	PublishHold(client);
 	blockedEvents[client] = BlockedEvent_ConnectFull | BlockedEvent_Activate;
 	HookRejoinConnection(client);
 }
@@ -466,10 +448,10 @@ public void Frame_BecomeBot(int client)
 		return;
 	}
 
-	handingOver = client;
+	handingOver[client] = true;
 	PublishHold(client);
 	MakeEngineBot(client, heldSlot[client].name, heldSlot[client].userID);
-	handingOver = 0;
+	handingOver[client] = false;
 	PublishHold(client);
 	engineBot[client] = true;
 	SDKUnhook(client, SDKHook_SetTransmit, Hook_HeldSetTransmit);
@@ -512,10 +494,18 @@ void OnClientDisconnect_Hold(int client)
 	}
 }
 
+// The deferred ClientConnect, where SourceMod drops the bot and connects the rejoin. The handover lasts until ClientActive
+void OnDeferredConnect(int client)
+{
+	handingOver[client] = true;
+	PublishHold(client);
+}
+
 void OnRejoinActive(int client)
 {
 	held[client] = false;
 	rejoining[client] = false;
+	handingOver[client] = false;
 	PublishHold(client);
 	SDKUnhook(client, SDKHook_SetTransmit, Hook_HeldSetTransmit);
 	UnhookRejoinConnection(client);
@@ -685,7 +675,6 @@ static void StartHold(int client)
 	GetClientName(client, heldSlot[client].name, sizeof(HeldSlot::name));
 	GetClientAuthId(client, AuthId_Engine, heldSlot[client].networkID, sizeof(HeldSlot::networkID), false);
 	held[client] = true;
-	rejoined[client] = false;
 	PublishHold(client);
 	blockedEvents[client] = 0;
 	UpdateHibernation();
@@ -705,7 +694,7 @@ static void EndHold(int client)
 {
 	held[client] = false;
 	rejoining[client] = false;
-	rejoined[client] = false;
+	handingOver[client] = false;
 	restoreAngles[client] = false;
 	blockedEvents[client] = 0;
 	endHoldOnRemove[client] = false;
@@ -718,7 +707,7 @@ static void EndHold(int client)
 static void PublishHold(int client)
 {
 	GOKZ_SetRunHeld(client, OwnsHeldUserID(client), IsHeldVerified(client) ? GetHeldAccountID(client) : 0);
-	GOKZ_SetRunCarriedOver(client, IsRejoin(client));
+	GOKZ_SetRunCarriedOver(client, handingOver[client]);
 }
 
 static void ApplyHold(int client)
