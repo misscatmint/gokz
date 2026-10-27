@@ -197,6 +197,7 @@ void Release(int client, const char[] reason = "Disconnect", bool force = false)
 	Call_OnHoldEnd(client);
 	EndHold(client);
 	releasingClient = client;
+	PublishHold(client);
 	LogMessage("Released held slot of \"%s\" <%s>", heldSlot[client].name, heldSlot[client].networkID);
 
 	// Its player_disconnect and RemoveClientFromGame then run as for any bot
@@ -204,6 +205,7 @@ void Release(int client, const char[] reason = "Disconnect", bool force = false)
 	{
 		DisconnectEngineBot(client, reason);
 		releasingClient = 0;
+		PublishHold(client);
 		UpdateHibernation();
 		return;
 	}
@@ -219,6 +221,7 @@ void Release(int client, const char[] reason = "Disconnect", bool force = false)
 
 	DeliverDisconnect(client);
 	releasingClient = 0;
+	PublishHold(client);
 	UpdateHibernation();
 }
 
@@ -299,6 +302,12 @@ void ReleaseAllHolds()
 			ServerExecute();
 		}
 		Release(client, _, true);
+		// gokz-core would otherwise still report a rejoin after this plugin unloads
+		if (rejoined[client])
+		{
+			rejoined[client] = false;
+			PublishHold(client);
+		}
 	}
 }
 
@@ -379,6 +388,7 @@ Action OnPlayerDisconnect_Hold(int client, const char[] reason, const char[] pla
 		// Dropped before the rejoin finished, so back to a plain hold
 		rejoining[client] = false;
 		rejoined[client] = false;
+		PublishHold(client);
 		blockedEvents[client] = 0;
 		UnhookRejoinConnection(client);
 		return Plugin_Handled;
@@ -391,6 +401,7 @@ Action OnPlayerDisconnect_Hold(int client, const char[] reason, const char[] pla
 	}
 
 	rejoined[client] = false;
+	PublishHold(client);
 	blockedEvents[client] = 0;
 	if (!leaving)
 	{
@@ -440,8 +451,10 @@ bool OnEngineRemovesClient(int client)
 		Call_OnHoldEnd(client);
 		EndHold(client);
 		releasingClient = client;
+		PublishHold(client);
 		DeliverDisconnect(client);
 		releasingClient = 0;
+		PublishHold(client);
 		UpdateHibernation();
 		return true;
 	}
@@ -477,6 +490,7 @@ bool OnEngineRemovesClient(int client)
 	}
 
 	rejoined[client] = false;
+	PublishHold(client);
 	blockedEvents[client] = 0;
 	return false;
 }
@@ -491,29 +505,9 @@ void OnRejoinRouted(int client)
 {
 	rejoining[client] = true;
 	rejoined[client] = true;
+	PublishHold(client);
 	blockedEvents[client] = BlockedEvent_ConnectFull | BlockedEvent_Activate;
 	HookRejoinConnection(client);
-}
-
-// held covers gokz-chat running after OnPlayerDisconnect_Hold
-bool WillHold(int client, const char[] reason)
-{
-	if (client == releasingClient)
-	{
-		return false;
-	}
-	char playerName[MAX_NAME_LENGTH];
-	GetClientName(client, playerName, sizeof(playerName));
-	// The engine bot leaves to let a rejoin in, or because it was kicked
-	if (held[client] && engineBot[client])
-	{
-		return client == unbotting;
-	}
-	if (held[client])
-	{
-		return !rejoining[client] || IsLeaveReason(reason, playerName);
-	}
-	return IsLeaveReason(reason, playerName) && CanHold(client);
 }
 
 public void Frame_BecomeBot(int client)
@@ -524,8 +518,10 @@ public void Frame_BecomeBot(int client)
 	}
 
 	handingOver = client;
+	PublishHold(client);
 	MakeEngineBot(client, heldSlot[client].name, heldSlot[client].userID);
 	handingOver = 0;
+	PublishHold(client);
 	engineBot[client] = true;
 	SDKUnhook(client, SDKHook_SetTransmit, Hook_HeldSetTransmit);
 	CS_SetClientClanTag(client, "[DISCONNECTED]");
@@ -570,6 +566,7 @@ void OnRejoinActive(int client)
 {
 	held[client] = false;
 	rejoining[client] = false;
+	PublishHold(client);
 	SDKUnhook(client, SDKHook_SetTransmit, Hook_HeldSetTransmit);
 	UnhookRejoinConnection(client);
 	UpdateHibernation();
@@ -723,6 +720,7 @@ static void StartHold(int client)
 	GetClientAuthId(client, AuthId_Engine, heldSlot[client].networkID, sizeof(HeldSlot::networkID), false);
 	held[client] = true;
 	rejoined[client] = false;
+	PublishHold(client);
 	blockedEvents[client] = 0;
 	UpdateHibernation();
 
@@ -747,6 +745,14 @@ static void EndHold(int client)
 	kicked[client] = false;
 	engineBot[client] = false;
 	UnhookRejoinConnection(client);
+	PublishHold(client);
+}
+
+// gokz-core keeps what other plugins read about held runs
+static void PublishHold(int client)
+{
+	GOKZ_SetRunHeld(client, OwnsHeldUserID(client), IsHeldVerified(client) ? GetHeldAccountID(client) : 0);
+	GOKZ_SetRunCarriedOver(client, IsRejoin(client));
 }
 
 static void ApplyHold(int client)
