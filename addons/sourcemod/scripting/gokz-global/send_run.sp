@@ -9,13 +9,19 @@ int lastRecordId[MAXPLAYERS + 1], storedCourse[MAXPLAYERS + 1], storedTimeType[M
 float storedTime[MAXPLAYERS + 1];
 bool deleteRecord[MAXPLAYERS + 1];
 
+enum struct UnverifiedRun
+{
+	int course;
+	int mode;
+	float time;
+	int teleportsUsed;
+}
+
 // =====[ PUBLIC ]=====
 
-void SendTime(int client, int course, float time, int teleportsUsed)
+void SendTime(int client, int course, int mode, float time, int teleportsUsed)
 {
 	char steamid[32], modeStr[32];
-	KZPlayer player = KZPlayer(client);
-	int mode = player.Mode;
 
 	int timeType = GOKZ_GetTimeTypeEx(teleportsUsed);
 
@@ -41,6 +47,37 @@ void SendTime(int client, int course, float time, int teleportsUsed)
 	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
 	GOKZ_GL_GetModeString(mode, modeStr, sizeof(modeStr));
 	GlobalAPI_CreateRecord(SendTimeCallback, dp, steamid, gI_MapID, modeStr, course, 128, teleportsUsed, time);
+}
+
+void KeepUnverifiedRun(int client, int course, int mode, float time, int teleportsUsed)
+{
+	UnverifiedRun run;
+	run.course = course;
+	run.mode = mode;
+	run.time = time;
+	run.teleportsUsed = teleportsUsed;
+	if (gA_UnverifiedRuns[client] == null)
+	{
+		gA_UnverifiedRuns[client] = new ArrayList(sizeof(UnverifiedRun));
+	}
+	gA_UnverifiedRuns[client].PushArray(run);
+}
+
+// Their replays aren't uploaded yet: GOKZ_RP_OnReplaySaved came before Steam verified the player.
+void SendUnverifiedRuns(int client)
+{
+	if (gA_UnverifiedRuns[client] == null)
+	{
+		return;
+	}
+
+	UnverifiedRun run;
+	for (int i = 0; i < gA_UnverifiedRuns[client].Length; i++)
+	{
+		gA_UnverifiedRuns[client].GetArray(i, run);
+		SendTime(client, run.course, run.mode, run.time, run.teleportsUsed);
+	}
+	delete gA_UnverifiedRuns[client];
 }
 
 public int SendTimeCallback(JSON_Object response, GlobalAPIRequestData request, DataPack dp)
