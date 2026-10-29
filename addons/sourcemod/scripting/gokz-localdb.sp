@@ -30,6 +30,7 @@ bool gB_ClientPostAdminChecked[MAXPLAYERS + 1];
 bool gB_WarnedUnverified[MAXPLAYERS + 1];
 bool gB_Cheater[MAXPLAYERS + 1];
 bool gB_CheaterPending[MAXPLAYERS + 1]; // flagged before Steam verified them
+ArrayList gA_UnverifiedTimes[MAXPLAYERS + 1];
 int gI_PBJSCache[MAXPLAYERS + 1][MODE_COUNT][JUMPTYPE_COUNT][JUMPSTATDB_CACHE_COUNT];
 bool gB_MapSetUp;
 int gI_DBCurrentMapID;
@@ -147,6 +148,7 @@ public void OnClientDisconnect(int client)
 	gB_CheaterPending[client] = false;
 	gB_WarnedUnverified[client] = false;
 	gB_ClientPostAdminChecked[client] = false;
+	delete gA_UnverifiedTimes[client];
 }
 
 public void GOKZ_OnCourseRegistered(int course)

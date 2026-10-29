@@ -4,6 +4,16 @@
 
 
 
+enum struct UnverifiedTime
+{
+	int mapID;
+	int course;
+	int mode;
+	int style;
+	int runTimeMS;
+	int teleportsUsed;
+}
+
 void DB_SaveTime(int client, int course, int mode, int style, float runTime, int teleportsUsed)
 {
 	if (IsFakeClient(client))
@@ -11,15 +21,50 @@ void DB_SaveTime(int client, int course, int mode, int style, float runTime, int
 		return;
 	}
 	
-	char query[1024];
 	int steamID = GetSteamAccountID(client);
-	if (steamID == 0)
-	{
-		GOKZ_PrintToChat(client, true, "%t", "Time Not Saved (Unverified)");
-		return;
-	}
 	int mapID = GOKZ_DB_GetCurrentMapID();
 	int runTimeMS = GOKZ_DB_TimeFloatToInt(runTime);
+	if (steamID == 0)
+	{
+		UnverifiedTime unverifiedTime;
+		unverifiedTime.mapID = mapID;
+		unverifiedTime.course = course;
+		unverifiedTime.mode = mode;
+		unverifiedTime.style = style;
+		unverifiedTime.runTimeMS = runTimeMS;
+		unverifiedTime.teleportsUsed = teleportsUsed;
+		if (gA_UnverifiedTimes[client] == null)
+		{
+			gA_UnverifiedTimes[client] = new ArrayList(sizeof(UnverifiedTime));
+		}
+		gA_UnverifiedTimes[client].PushArray(unverifiedTime);
+		GOKZ_PrintToChat(client, true, "%t", "Time Saved Once Verified");
+		return;
+	}
+
+	DB_InsertTime(client, steamID, mapID, course, mode, style, runTimeMS, teleportsUsed);
+}
+
+void DB_SaveUnverifiedTimes(int client, int steamID)
+{
+	if (gA_UnverifiedTimes[client] == null)
+	{
+		return;
+	}
+
+	UnverifiedTime unverifiedTime;
+	for (int i = 0; i < gA_UnverifiedTimes[client].Length; i++)
+	{
+		gA_UnverifiedTimes[client].GetArray(i, unverifiedTime);
+		DB_InsertTime(client, steamID, unverifiedTime.mapID, unverifiedTime.course, unverifiedTime.mode,
+			unverifiedTime.style, unverifiedTime.runTimeMS, unverifiedTime.teleportsUsed);
+	}
+	delete gA_UnverifiedTimes[client];
+}
+
+static void DB_InsertTime(int client, int steamID, int mapID, int course, int mode, int style, int runTimeMS, int teleportsUsed)
+{
+	char query[1024];
 	
 	DataPack data = new DataPack();
 	data.WriteCell(GetClientUserId(client));

@@ -103,4 +103,5 @@ public void DB_TxnSuccess_SetupClient(Handle db, DataPack data, int numQueries, 
 		DB_SetCheater(client, true);
 	}
 	Call_OnClientSetup(client, steamID, gB_Cheater[client]);
+	DB_SaveUnverifiedTimes(client, steamID);
 } 
