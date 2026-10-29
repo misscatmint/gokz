@@ -1522,6 +1522,23 @@ native void GOKZ_JoinTeam(int client, int team, bool restorePos = true, bool for
  */
 native void GOKZ_EmitSoundToClient(int client, const char[] sample, float volume = SNDVOL_NORMAL, const char[] description = "");
 
+/**
+ * Gets the client playing as a Steam account.
+ *
+ * Deferred work (SQL and global API callbacks, timers) about a run or an
+ * account keeps the account ID and finds its player with this native when
+ * it runs, because the player may have left or reconnected as another client.
+ * Deferred work started by a connection (loading its own data during
+ * setup, a menu, a reply to a command, a kick, a ConVar query, a team join)
+ * keeps the userid and does nothing when that connection is gone, even
+ * when the data is per account: setup can run before the player is in game.
+ *
+ * @param accountID		SteamID32 of the account (from GetSteamAccountID()).
+ * @return				Index of the in-game, non-fake client playing as the
+ *						account, or 0 if there is none.
+ */
+native int GOKZ_GetClientOfSteamAccountID(int accountID);
+
 
 // =====[ STOCKS ]=====
 
@@ -1916,5 +1933,6 @@ public void __pl_gokz_core_SetNTVOptional()
 	MarkNativeAsOptional("GOKZ_GetValidJump");
 	MarkNativeAsOptional("GOKZ_JoinTeam");
 	MarkNativeAsOptional("GOKZ_EmitSoundToClient");
+	MarkNativeAsOptional("GOKZ_GetClientOfSteamAccountID");
 }
 #endif
