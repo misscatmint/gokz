@@ -105,6 +105,7 @@ public void OnPluginStart()
 	CreateConVars();
 	CreateGlobalForwards();
 	RegisterCommands();
+	OnPluginStart_SendRun();
 
 	CreateTimer(GL_API_RECHECK_INTERVAL, RecheckAPIStatus, INVALID_HANDLE, TIMER_REPEAT);
 }
@@ -337,11 +338,6 @@ public void GOKZ_OnRunInvalidated(int client)
 	gB_InValidRun[client] = false;
 }
 
-public void GOKZ_GL_OnNewTopTime(int client, int course, int mode, int timeType, int rank, int rankOverall, float runTime, const char[] mapName)
-{
-	AnnounceNewTopTime(client, course, mode, timeType, rank, rankOverall);
-}
-
 public void GOKZ_AC_OnPlayerSuspected(int client, ACReason reason, const char[] notes, const char[] stats)
 {
 	if (!gB_GloballyVerified[client])
@@ -409,6 +405,7 @@ public void OnMapEnd()
 	{
 		ResetMapPoints(client);
 	}
+	OnMapEnd_SendRun();
 }
 
 public void GOKZ_OnOptionChanged(int client, const char[] option, any newValue)
@@ -472,7 +469,7 @@ void PrintGlobalCheckToChat(int client)
 	GOKZ_PrintToChat(client, false, "%s", modeCheck);
 }
 
-void AnnounceNewTopTime(int client, int course, int mode, int timeType, int rank, int rankOverall)
+void AnnounceNewTopTime(const char[] name, int course, int mode, int timeType, int rank, int rankOverall)
 {
 	bool newRecord = false;
 	
@@ -482,11 +479,11 @@ void AnnounceNewTopTime(int client, int course, int mode, int timeType, int rank
 		{
 			if (course == 0)
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Record (NUB)", client, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Record (NUB)", name, gC_ModeNamesShort[mode]);
 			}
 			else
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Bonus Record (NUB)", client, course, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Bonus Record (NUB)", name, course, gC_ModeNamesShort[mode]);
 			}
 			newRecord = true;
 		}
@@ -494,11 +491,11 @@ void AnnounceNewTopTime(int client, int course, int mode, int timeType, int rank
 		{
 			if (course == 0)
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Top Time (NUB)", client, rankOverall, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Top Time (NUB)", name, rankOverall, gC_ModeNamesShort[mode]);
 			}
 			else
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Top Bonus Time (NUB)", client, rankOverall, course, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Top Bonus Time (NUB)", name, rankOverall, course, gC_ModeNamesShort[mode]);
 			}
 		}
 	}
@@ -510,11 +507,11 @@ void AnnounceNewTopTime(int client, int course, int mode, int timeType, int rank
 			{
 				if (course == 0)
 				{
-					GOKZ_PrintToChatAll(true, "%t", "New Global Record (NUB)", client, gC_ModeNamesShort[mode]);
+					GOKZ_PrintToChatAll(true, "%t", "New Global Record (NUB)", name, gC_ModeNamesShort[mode]);
 				}
 				else
 				{
-					GOKZ_PrintToChatAll(true, "%t", "New Global Bonus Record (NUB)", client, course, gC_ModeNamesShort[mode]);
+					GOKZ_PrintToChatAll(true, "%t", "New Global Bonus Record (NUB)", name, course, gC_ModeNamesShort[mode]);
 				}
 				newRecord = true;
 			}
@@ -522,11 +519,11 @@ void AnnounceNewTopTime(int client, int course, int mode, int timeType, int rank
 			{
 				if (course == 0)
 				{
-					GOKZ_PrintToChatAll(true, "%t", "New Global Top Time (NUB)", client, rankOverall, gC_ModeNamesShort[mode]);
+					GOKZ_PrintToChatAll(true, "%t", "New Global Top Time (NUB)", name, rankOverall, gC_ModeNamesShort[mode]);
 				}
 				else
 				{
-					GOKZ_PrintToChatAll(true, "%t", "New Global Top Bonus Time (NUB)", client, rankOverall, course, gC_ModeNamesShort[mode]);
+					GOKZ_PrintToChatAll(true, "%t", "New Global Top Bonus Time (NUB)", name, rankOverall, course, gC_ModeNamesShort[mode]);
 				}
 			}
 		}
@@ -535,11 +532,11 @@ void AnnounceNewTopTime(int client, int course, int mode, int timeType, int rank
 		{
 			if (course == 0)
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Record (PRO)", client, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Record (PRO)", name, gC_ModeNamesShort[mode]);
 			}
 			else
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Bonus Record (PRO)", client, course, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Bonus Record (PRO)", name, course, gC_ModeNamesShort[mode]);
 			}
 			newRecord = true;
 		}
@@ -547,11 +544,11 @@ void AnnounceNewTopTime(int client, int course, int mode, int timeType, int rank
 		{
 			if (course == 0)
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Top Time (PRO)", client, rank, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Top Time (PRO)", name, rank, gC_ModeNamesShort[mode]);
 			}
 			else
 			{
-				GOKZ_PrintToChatAll(true, "%t", "New Global Top Bonus Time (PRO)", client, rank, course, gC_ModeNamesShort[mode]);
+				GOKZ_PrintToChatAll(true, "%t", "New Global Top Bonus Time (PRO)", name, rank, course, gC_ModeNamesShort[mode]);
 			}
 		}
 	}
