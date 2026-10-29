@@ -64,11 +64,14 @@ void DB_SaveUnverifiedTimes(int client, int steamID)
 
 static void DB_InsertTime(int client, int steamID, int mapID, int course, int mode, int style, int runTimeMS, int teleportsUsed)
 {
-	char query[1024];
+	char query[1024], name[MAX_NAME_LENGTH];
+	GetClientName(client, name, sizeof(name));
 	
 	DataPack data = new DataPack();
 	data.WriteCell(GetClientUserId(client));
 	data.WriteCell(steamID);
+	data.WriteString(name);
+	data.WriteCell(gB_Cheater[client]);
 	data.WriteCell(mapID);
 	data.WriteCell(course);
 	data.WriteCell(mode);
@@ -87,9 +90,13 @@ static void DB_InsertTime(int client, int steamID, int mapID, int course, int mo
 
 public void DB_TxnSuccess_SaveTime(Handle db, DataPack data, int numQueries, Handle[] results, any[] queryData)
 {
+	char name[MAX_NAME_LENGTH];
+
 	data.Reset();
 	int client = GetClientOfUserId(data.ReadCell());
 	int steamID = data.ReadCell();
+	data.ReadString(name, sizeof(name));
+	bool cheater = data.ReadCell();
 	int mapID = data.ReadCell();
 	int course = data.ReadCell();
 	int mode = data.ReadCell();
@@ -98,6 +105,8 @@ public void DB_TxnSuccess_SaveTime(Handle db, DataPack data, int numQueries, Han
 	int teleportsUsed = data.ReadCell();
 	delete data;
 	
+	Call_OnTimeInsertedForAccount(steamID, name, cheater, mapID, course, mode, style, runTimeMS, teleportsUsed);
+
 	if (!IsValidClient(client))
 	{
 		return;

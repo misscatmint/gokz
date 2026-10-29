@@ -74,6 +74,7 @@ void CreateNatives()
 	CreateNative("GOKZ_JoinTeam", Native_JoinTeam);
 
 	CreateNative("GOKZ_EmitSoundToClient", Native_EmitSoundToClient);
+	CreateNative("GOKZ_GetClientOfSteamAccountID", Native_GetClientOfSteamAccountID);
 }
 
 public int Native_GetModeLoaded(Handle plugin, int numParams)
@@ -627,6 +628,26 @@ public int Native_EmitSoundToClient(Handle plugin, int numParams)
 		return 0;
 	}
 	EmitSoundToClient(client, sample, _, _, _, _, volume);
+	return 0;
+}
+
+public int Native_GetClientOfSteamAccountID(Handle plugin, int numParams)
+{
+	int accountID = GetNativeCell(1);
+
+	// Clients not yet validated by Steam have account ID 0
+	if (accountID == 0)
+	{
+		return 0;
+	}
+
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && !IsFakeClient(client) && GetSteamAccountID(client) == accountID)
+		{
+			return client;
+		}
+	}
 	return 0;
 }
 

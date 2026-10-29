@@ -150,15 +150,19 @@ public void GOKZ_DB_OnClientSetup(int client, int steamID, bool cheater)
 	}
 }
 
-public void GOKZ_DB_OnTimeInserted(int client, int steamID, int mapID, int course, int mode, int style, int runTimeMS, int teleportsUsed)
+public void GOKZ_DB_OnTimeInsertedForAccount(int steamID, const char[] name, bool cheater, int mapID, int course, int mode, int style, int runTimeMS, int teleportsUsed)
 {
-	if (GOKZ_DB_IsCheater(client))
+	if (cheater)
 	{
-		DB_CachePBs(client, GetSteamAccountID(client));
+		int client = GOKZ_GetClientOfSteamAccountID(steamID);
+		if (client != 0)
+		{
+			DB_CachePBs(client, steamID);
+		}
 	}
 	else
 	{
-		DB_ProcessNewTime(client, steamID, mapID, course, mode, style, runTimeMS, teleportsUsed);
+		DB_ProcessNewTime(steamID, name, mapID, course, mode, style, runTimeMS, teleportsUsed);
 	}
 }
 
@@ -185,8 +189,6 @@ public void GOKZ_LR_OnTimeProcessed(
 		return;
 	}
 	
-	AnnounceNewTime(client, course, mode, runTime, teleportsUsed, firstTime, pbDiff, rank, maxRank, firstTimePro, pbDiffPro, rankPro, maxRankPro);
-	
 	if (mode == GOKZ_GetDefaultMode() && firstTimePro)
 	{
 		CompletionMVPStarsUpdate(client);
@@ -197,17 +199,6 @@ public void GOKZ_LR_OnTimeProcessed(
 	{
 		DB_CachePBs(client, GetSteamAccountID(client));
 	}
-}
-
-public void GOKZ_LR_OnNewRecord(int client, int steamID, int mapID, int course, int mode, int style, int recordType)
-{
-	if (mapID != GOKZ_DB_GetCurrentMapID())
-	{
-		return;
-	}
-	
-	AnnounceNewRecord(client, course, mode, recordType);
-	DB_CacheRecords(mapID);
 }
 
 public void GOKZ_LR_OnPBMissed(int client, float pbTime, int course, int mode, int style, int recordType)

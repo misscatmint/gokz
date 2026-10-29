@@ -90,6 +90,7 @@ static void GetPlayerRanks(int client, int mode, int timeType, int mapID = DEFAU
 	GetClientAuthId(client, AuthId_SteamID64, steamid, sizeof(steamid));
 	
 	DataPack dp = new DataPack();
+	dp.WriteCell(GetSteamAccountID(client));
 	dp.WriteCell(GetClientUserId(client));
 	dp.WriteCell(mode);
 	dp.WriteCell(timeType);
@@ -102,19 +103,24 @@ static void GetPlayerRanks(int client, int mode, int timeType, int mapID = DEFAU
 static void UpdatePointsCallback(JSON_Object ranks, GlobalAPIRequestData request, DataPack dp)
 {
 	dp.Reset();
-	int client = GetClientOfUserId(dp.ReadCell());
+	int client = GOKZ_GetClientOfSteamAccountID(dp.ReadCell());
+	int userID = dp.ReadCell();
 	int mode = dp.ReadCell();
 	int timeType = dp.ReadCell();
 	bool isTotal = dp.ReadCell();
 	delete dp;
-	
-	requestsInProgress[client]--;
 	
 	if (client == 0)
 	{
 		return;
 	}
 	
+	// The count belongs to the connection that sent the request
+	if (GetClientUserId(client) == userID)
+	{
+		requestsInProgress[client]--;
+	}
+
 	int points, totalFinishes;
 	if (request.Failure || !ranks.IsArray || ranks.Length == 0)
 	{

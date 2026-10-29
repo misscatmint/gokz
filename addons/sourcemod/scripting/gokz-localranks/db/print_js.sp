@@ -21,7 +21,7 @@ void DisplayJumpstatRecord(int client, int jumpType, char[] jumper = "")
 	else
 	{
 		DataPack data = new DataPack();
-		data.WriteCell(client);
+		data.WriteCell(GetClientUserId(client));
 		data.WriteCell(jumpType);
 		data.WriteCell(mode);
 		data.WriteString(jumper);
@@ -35,12 +35,17 @@ public void DB_JS_TxnSuccess_LookupPlayer(Handle db, DataPack data, int numQueri
 	char jumper[MAX_NAME_LENGTH];
 	
 	data.Reset();
-	int client = data.ReadCell();
+	int client = GetClientOfUserId(data.ReadCell());
 	int jumpType = data.ReadCell();
 	int mode = data.ReadCell();
 	data.ReadString(jumper, sizeof(jumper));
 	delete data;
 	
+	if (!IsValidClient(client))
+	{
+		return;
+	}
+
 	if (SQL_GetRowCount(results[0]) == 0)
 	{
 		GOKZ_PrintToChat(client, true, "%t", "Player Not Found", jumper);
@@ -61,7 +66,7 @@ void DB_JS_OpenPlayerRecord(int client, int steamid, char[] alias, int jumpType,
 	char query[1024];
 	
 	DataPack data = new DataPack();
-	data.WriteCell(client);
+	data.WriteCell(GetClientUserId(client));
 	data.WriteString(alias);
 	data.WriteCell(jumpType);
 	data.WriteCell(mode);
@@ -76,7 +81,7 @@ public void DB_JS_TxnSuccess_OpenPlayerRecord(Handle db, DataPack data, int numQ
 {
 	char alias[33];
 	data.Reset();
-	int client = data.ReadCell();
+	int client = GetClientOfUserId(data.ReadCell());
 	data.ReadString(alias, sizeof(alias));
 	int jumpType = data.ReadCell();
 	int mode = data.ReadCell();

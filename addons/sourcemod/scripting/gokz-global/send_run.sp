@@ -4,10 +4,15 @@
 
 
 
-char storedReplayPath[MAXPLAYERS + 1][512];
-int lastRecordId[MAXPLAYERS + 1], storedCourse[MAXPLAYERS + 1], storedTimeType[MAXPLAYERS + 1], storedUserId[MAXPLAYERS + 1];
-float storedTime[MAXPLAYERS + 1];
-bool deleteRecord[MAXPLAYERS + 1];
+enum struct PendingReplay
+{
+	char path[PLATFORM_MAX_PATH];
+	bool temp;
+}
+
+// A run's record ID and its replay arrive in either order, so the first waits here for the other
+static StringMap pendingRecordIds;
+static StringMap pendingReplays;
 
 enum struct UnverifiedRun
 {
@@ -19,9 +24,29 @@ enum struct UnverifiedRun
 
 // =====[ PUBLIC ]=====
 
+void OnPluginStart_SendRun()
+{
+	pendingRecordIds = new StringMap();
+	pendingReplays = new StringMap();
+}
+
+void OnMapEnd_SendRun()
+{
+	// Halves that never meet (no replay saved, or a failed API call) would pile up otherwise
+	StringMapSnapshot keys = pendingReplays.Snapshot();
+	char key[64];
+	for (int i = 0; i < keys.Length; i++)
+	{
+		keys.GetKey(i, key, sizeof(key));
+		DropPendingReplay(key);
+	}
+	delete keys;
+	pendingRecordIds.Clear();
+}
+
 void SendTime(int client, int course, int mode, float time, int teleportsUsed)
 {
-	char steamid[32], modeStr[32];
+	char steamid[32], modeStr[32], name[MAX_NAME_LENGTH];
 
 	int timeType = GOKZ_GetTimeTypeEx(teleportsUsed);
 
@@ -36,8 +61,11 @@ void SendTime(int client, int course, int mode, float time, int teleportsUsed)
 		}
 	}
 
+	GetClientName(client, name, sizeof(name));
+
 	DataPack dp = CreateDataPack();
-	dp.WriteCell(GetClientUserId(client));
+	dp.WriteCell(GetSteamAccountID(client));
+	dp.WriteString(name);
 	dp.WriteCell(course);
 	dp.WriteCell(mode);
 	dp.WriteCell(timeType);
@@ -82,9 +110,11 @@ void SendUnverifiedRuns(int client)
 
 public int SendTimeCallback(JSON_Object response, GlobalAPIRequestData request, DataPack dp)
 {
+	char name[MAX_NAME_LENGTH];
+
 	dp.Reset();
-	int userID = dp.ReadCell();
-	int client = GetClientOfUserId(userID);
+	int steamID = dp.ReadCell();
+	dp.ReadString(name, sizeof(name));
 	int course = dp.ReadCell();
 	int mode = dp.ReadCell();
 	int timeType = dp.ReadCell();
@@ -92,12 +122,10 @@ public int SendTimeCallback(JSON_Object response, GlobalAPIRequestData request, 
 	char mapName[64];
 	dp.ReadString(mapName, sizeof(mapName));
 	delete dp;
-	
-	if (!IsValidClient(client))
-	{
-		return 0;
-	}
-	
+
+	char key[64];
+	FormatRunKey(key, sizeof(key), steamID, course, timeType, time);
+
 	if (request.Failure)
 	{
 		LogError("Failed to send a time to the global API.");
@@ -105,81 +133,97 @@ public int SendTimeCallback(JSON_Object response, GlobalAPIRequestData request, 
 		{
 			GlobalAPI_GetAuthStatus(GetAuthStatusCallback);
 		}
+		DropPendingReplay(key);
 		return 0;
 	}
 	
 	int top_place = response.GetInt("top_100");
 	int top_overall_place = response.GetInt("top_100_overall");
 	
+	// The player may have left or reconnected since finishing
+	int client = GOKZ_GetClientOfSteamAccountID(steamID);
+
 	if (top_place > 0)
 	{
-		Call_OnNewTopTime(client, course, mode, timeType, top_place, top_overall_place, time, mapName);
+		AnnounceNewTopTime(name, course, mode, timeType, top_place, top_overall_place);
+		if (client != 0)
+		{
+			Call_OnNewTopTime(client, course, mode, timeType, top_place, top_overall_place, time, mapName);
+		}
 	}
 	
-	// Don't like doing this here, but seems to be the most efficient place
-	UpdatePoints(client, true);
+	if (client != 0)
+	{
+		// Don't like doing this here, but seems to be the most efficient place
+		UpdatePoints(client, true);
+	}
 
 	// Check if we can send the replay
-	lastRecordId[client] = response.GetInt("record_id");
-	if (IsReplayReadyToSend(client, course, timeType, time))
+	int recordId = response.GetInt("record_id");
+	if (recordId == -1)
 	{
-		SendReplay(client);
+		DropPendingReplay(key);
+		return 0;
+	}
+
+	PendingReplay replay;
+	if (pendingReplays.GetArray(key, replay, sizeof(replay)))
+	{
+		pendingReplays.Remove(key);
+		SendReplay(recordId, replay.path, replay.temp);
 	}
 	else
 	{
-		storedUserId[client] = userID;
-		storedCourse[client] = course;
-		storedTimeType[client] = timeType;
-		storedTime[client] = time;
+		pendingRecordIds.SetValue(key, recordId);
 	}
 	return 0;
 }
 
 public void OnReplaySaved_SendReplay(int client, int replayType, const char[] map, int course, int timeType, float time, const char[] filePath, bool tempReplay)
 {
-	strcopy(storedReplayPath[client], sizeof(storedReplayPath[]), filePath);
-	if (IsReplayReadyToSend(client, course, timeType, time))
+	char key[64];
+	FormatRunKey(key, sizeof(key), GetSteamAccountID(client), course, timeType, time);
+	int recordId;
+	if (pendingRecordIds.GetValue(key, recordId))
 	{
-		SendReplay(client);
+		pendingRecordIds.Remove(key);
+		SendReplay(recordId, filePath, tempReplay);
 	}
 	else
 	{
-		lastRecordId[client] = -1;
-		storedUserId[client] = GetClientUserId(client);
-		storedCourse[client] = course;
-		storedTimeType[client] = timeType;
-		storedTime[client] = time;
-		deleteRecord[client] = tempReplay;
+		PendingReplay replay;
+		strcopy(replay.path, sizeof(replay.path), filePath);
+		replay.temp = tempReplay;
+		pendingReplays.SetArray(key, replay, sizeof(replay));
 	}
 }
 
-bool IsReplayReadyToSend(int client, int course, int timeType, float time)
+// The run's replay won't be uploaded, so a temporary one isn't needed any more
+static void DropPendingReplay(const char[] key)
 {
-	// Not an error, just not ready yet
-	if (lastRecordId[client] == -1 || storedReplayPath[client][0] == '\0')
+	PendingReplay replay;
+	if (!pendingReplays.GetArray(key, replay, sizeof(replay)))
 	{
-		return false;
+		return;
 	}
-	
-	if (storedUserId[client] == GetClientUserId(client) && storedCourse[client] == course
-		&& storedTimeType[client] == timeType && storedTime[client] == time)
+	pendingReplays.Remove(key);
+	if (replay.temp)
 	{
-		return true;
-	}
-	else
-	{
-		LogError("Failed to upload replay to the global API. Record mismatch.");
-		return false;
+		DeleteFile(replay.path);
 	}
 }
 
-public void SendReplay(int client)
+static void FormatRunKey(char[] key, int maxlength, int steamID, int course, int timeType, float time)
+{
+	// Both halves carry the same float, so its bits match exactly
+	FormatEx(key, maxlength, "%d_%d_%d_%d", steamID, course, timeType, view_as<int>(time));
+}
+
+static void SendReplay(int recordId, const char[] replayPath, bool temp)
 {
 	DataPack dp = new DataPack();
-	dp.WriteString(deleteRecord[client] ? storedReplayPath[client] : "");
-	GlobalAPI_CreateReplayForRecordId(SendReplayCallback, dp, lastRecordId[client], storedReplayPath[client]);
-	lastRecordId[client] = -1;
-	storedReplayPath[client] = "";
+	dp.WriteString(temp ? replayPath : "");
+	GlobalAPI_CreateReplayForRecordId(SendReplayCallback, dp, recordId, replayPath);
 }
 
 public int SendReplayCallback(JSON_Object response, GlobalAPIRequestData request, DataPack dp)
