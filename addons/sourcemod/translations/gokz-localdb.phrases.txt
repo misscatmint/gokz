@@ -2,11 +2,11 @@
 {
 	"Unverified Run Warning"
 	{
-		"en"		"{grey}Steam has not verified you yet. Your time is only saved if it does before you finish."
+		"en"		"{grey}Steam has not verified you yet. Your times are saved once it does."
 	}
-	"Time Not Saved (Unverified)"
+	"Time Saved Once Verified"
 	{
-		"en"		"{grey}Your time was not saved: Steam has not verified you yet."
+		"en"		"{grey}Steam has not verified you yet. Your time will be saved once it does."
 	}
 	"Timer Setup Unavailable (Unverified)"
 	{
