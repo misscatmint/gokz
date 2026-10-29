@@ -268,6 +268,11 @@ public Action Timer_EndRecording(Handle timer, DataPack data)
 		// Replay might be submitted globally, but will not be saved locally.
 		saveState = ReplaySave_Temp;
 	}
+	else if (gB_GOKZLocalDB && GetSteamAccountID(client) == 0)
+	{
+		// localdb saves the time only if Steam verifies the player later, which may never happen
+		saveState = ReplaySave_Temp;
+	}
 	
 	char path[PLATFORM_MAX_PATH];
 	if (SaveRecordingOfRun(path, client, course, time, teleportsUsed, saveState == ReplaySave_Temp))
