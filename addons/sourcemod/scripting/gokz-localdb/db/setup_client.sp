@@ -36,6 +36,7 @@ void DB_SetupClient(int client)
 	DataPack data = new DataPack();
 	data.WriteCell(GetClientUserId(client));
 	data.WriteCell(steamID);
+	data.WriteCell(gB_CheaterPending[client]);
 	
 	Transaction txn = SQL_CreateTransaction();
 	
@@ -70,8 +71,14 @@ public void DB_TxnSuccess_SetupClient(Handle db, DataPack data, int numQueries, 
 	data.Reset();
 	int client = GetClientOfUserId(data.ReadCell());
 	int steamID = data.ReadCell();
+	bool cheaterPending = view_as<bool>(data.ReadCell());
 	delete data;
 	
+	if (cheaterPending)
+	{
+		DB_SetCheaterSteamID(0, steamID, true);
+	}
+
 	if (client == 0 || !IsClientAuthorized(client))
 	{
 		return;
@@ -96,11 +103,10 @@ public void DB_TxnSuccess_SetupClient(Handle db, DataPack data, int numQueries, 
 	}
 	
 	gB_ClientSetUp[client] = true;
-	if (gB_CheaterPending[client])
+	if (cheaterPending)
 	{
 		gB_CheaterPending[client] = false;
-		gB_Cheater[client] = false; // so the database gets written
-		DB_SetCheater(client, true);
+		gB_Cheater[client] = true;
 	}
 	Call_OnClientSetup(client, steamID, gB_Cheater[client]);
 	DB_SaveUnverifiedTimes(client, steamID);
