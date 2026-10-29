@@ -113,6 +113,13 @@ public void OnMapEnd()
 	gB_MapSetUp = false;
 }
 
+public void OnClientConnected(int client)
+{
+	gB_Cheater[client] = false;
+	gB_CheaterPending[client] = false;
+	ClearCache(client);
+}
+
 public void OnClientAuthorized(int client, const char[] auth)
 {
 	DB_SetupClient(client);
