@@ -42,6 +42,7 @@ char gC_CurrentMap[64];
 int gI_CurrentMapFileSize;
 bool gB_InValidRun[MAXPLAYERS + 1];
 bool gB_GloballyVerified[MAXPLAYERS + 1];
+ArrayList gA_UnverifiedRuns[MAXPLAYERS + 1];
 bool gB_EnforcerOnFreshMap;
 bool gB_JustLateLoaded;
 int gI_FPSMax[MAXPLAYERS + 1];
@@ -244,6 +245,11 @@ public void OnClientPutInServer(int client)
 	OnClientPutInServer_PrintRecords(client);
 }
 
+public void OnClientDisconnect(int client)
+{
+	delete gA_UnverifiedRuns[client];
+}
+
 // OnClientAuthorized is apparently too early
 public void OnClientPostAdminCheck(int client)
 {
@@ -311,14 +317,19 @@ public void GOKZ_OnTimerStart_Post(int client, int course)
 
 public void GOKZ_OnTimerEnd_Post(int client, int course, float time, int teleportsUsed)
 {
-	if (!gB_InValidRun[client] && GlobalsEnabled(KZPlayer(client).Mode))
+	int mode = KZPlayer(client).Mode;
+	if (!gB_InValidRun[client] && GlobalsEnabled(mode))
 	{
 		gB_InValidRun[client] = true;
 	}
 
 	if (gB_GloballyVerified[client] && gB_InValidRun[client])
 	{
-		SendTime(client, course, time, teleportsUsed);
+		SendTime(client, course, mode, time, teleportsUsed);
+	}
+	else if (!IsClientAuthorized(client) && gB_InValidRun[client] && GlobalsEnabled(mode))
+	{
+		KeepUnverifiedRun(client, course, mode, time, teleportsUsed);
 	}
 }
 
@@ -346,6 +357,7 @@ public void GOKZ_AC_OnPlayerSuspected(int client, ACReason reason, const char[] 
 {
 	if (!gB_GloballyVerified[client])
 	{
+		delete gA_UnverifiedRuns[client];
 		return;
 	}
 	
@@ -907,6 +919,15 @@ public void CheckClientGlobalBan_Callback(JSON_Object player_json, GlobalAPIRequ
 	
 	gB_GloballyVerified[client] = !player.IsBanned;
 	
+	if (gB_GloballyVerified[client])
+	{
+		SendUnverifiedRuns(client);
+	}
+	else
+	{
+		delete gA_UnverifiedRuns[client];
+	}
+
 	if (player.IsBanned && gB_GOKZLocalDB)
 	{
 		GOKZ_DB_SetCheater(client, true);
