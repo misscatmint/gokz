@@ -2,6 +2,7 @@ static GlobalForward H_OnDatabaseConnect;
 static GlobalForward H_OnClientSetup;
 static GlobalForward H_OnMapSetup;
 static GlobalForward H_OnTimeInserted;
+static GlobalForward H_OnTimeInsertedForAccount;
 static GlobalForward H_OnJumpstatPB;
 
 
@@ -14,6 +15,7 @@ void CreateGlobalForwards()
 	H_OnClientSetup = new GlobalForward("GOKZ_DB_OnClientSetup", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	H_OnMapSetup = new GlobalForward("GOKZ_DB_OnMapSetup", ET_Ignore, Param_Cell);
 	H_OnTimeInserted = new GlobalForward("GOKZ_DB_OnTimeInserted", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	H_OnTimeInsertedForAccount = new GlobalForward("GOKZ_DB_OnTimeInsertedForAccount", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	H_OnJumpstatPB = new GlobalForward("GOKZ_DB_OnJumpstatPB", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 }
 
@@ -45,6 +47,21 @@ void Call_OnTimeInserted(int client, int steamID, int mapID, int course, int mod
 	Call_StartForward(H_OnTimeInserted);
 	Call_PushCell(client);
 	Call_PushCell(steamID);
+	Call_PushCell(mapID);
+	Call_PushCell(course);
+	Call_PushCell(mode);
+	Call_PushCell(style);
+	Call_PushCell(runTimeMS);
+	Call_PushCell(teleportsUsed);
+	Call_Finish();
+}
+
+void Call_OnTimeInsertedForAccount(int steamID, const char[] name, bool cheater, int mapID, int course, int mode, int style, int runTimeMS, int teleportsUsed)
+{
+	Call_StartForward(H_OnTimeInsertedForAccount);
+	Call_PushCell(steamID);
+	Call_PushString(name);
+	Call_PushCell(cheater);
 	Call_PushCell(mapID);
 	Call_PushCell(course);
 	Call_PushCell(mode);

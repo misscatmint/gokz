@@ -11,14 +11,17 @@ void DB_SaveTime(int client, int course, int mode, int style, float runTime, int
 		return;
 	}
 	
-	char query[1024];
+	char query[1024], name[MAX_NAME_LENGTH];
 	int steamID = GetSteamAccountID(client);
 	int mapID = GOKZ_DB_GetCurrentMapID();
 	int runTimeMS = GOKZ_DB_TimeFloatToInt(runTime);
+	GetClientName(client, name, sizeof(name));
 	
 	DataPack data = new DataPack();
 	data.WriteCell(GetClientUserId(client));
 	data.WriteCell(steamID);
+	data.WriteString(name);
+	data.WriteCell(gB_Cheater[client]);
 	data.WriteCell(mapID);
 	data.WriteCell(course);
 	data.WriteCell(mode);
@@ -37,9 +40,13 @@ void DB_SaveTime(int client, int course, int mode, int style, float runTime, int
 
 public void DB_TxnSuccess_SaveTime(Handle db, DataPack data, int numQueries, Handle[] results, any[] queryData)
 {
+	char name[MAX_NAME_LENGTH];
+
 	data.Reset();
 	int client = GetClientOfUserId(data.ReadCell());
 	int steamID = data.ReadCell();
+	data.ReadString(name, sizeof(name));
+	bool cheater = data.ReadCell();
 	int mapID = data.ReadCell();
 	int course = data.ReadCell();
 	int mode = data.ReadCell();
@@ -48,6 +55,8 @@ public void DB_TxnSuccess_SaveTime(Handle db, DataPack data, int numQueries, Han
 	int teleportsUsed = data.ReadCell();
 	delete data;
 	
+	Call_OnTimeInsertedForAccount(steamID, name, cheater, mapID, course, mode, style, runTimeMS, teleportsUsed);
+
 	if (!IsValidClient(client))
 	{
 		return;

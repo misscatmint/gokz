@@ -82,12 +82,6 @@ public void DB_TxnSuccess_LookupJSRecordForSave(Handle db, DataPack data, int nu
 	int max = data.ReadCell();
 	int airtime = data.ReadCell();
 	
-	if (!IsValidClient(client))
-	{
-		delete data;
-		return;
-	}
-	
 	char query[1024];
 	int rows = SQL_GetRowCount(results[0]);
 	if (rows == 0)
@@ -100,14 +94,17 @@ public void DB_TxnSuccess_LookupJSRecordForSave(Handle db, DataPack data, int nu
 		int rec_distance = SQL_FetchInt(results[0], JumpstatDB_Lookup_Distance);
 		int rec_block = SQL_FetchInt(results[0], JumpstatDB_Lookup_Block);
 		
-		if (rec_block == 0)
+		if (IsValidClient(client))
 		{
-			gI_PBJSCache[client][mode][jumpType][JumpstatDB_Cache_Distance] = rec_distance;
-		}
-		else
-		{
-			gI_PBJSCache[client][mode][jumpType][JumpstatDB_Cache_Block] = rec_block;
-			gI_PBJSCache[client][mode][jumpType][JumpstatDB_Cache_BlockDistance] = rec_distance;
+			if (rec_block == 0)
+			{
+				gI_PBJSCache[client][mode][jumpType][JumpstatDB_Cache_Distance] = rec_distance;
+			}
+			else
+			{
+				gI_PBJSCache[client][mode][jumpType][JumpstatDB_Cache_Block] = rec_block;
+				gI_PBJSCache[client][mode][jumpType][JumpstatDB_Cache_BlockDistance] = rec_distance;
+			}
 		}
 		
 		if (block < rec_block || block == rec_block && distance < rec_distance)

@@ -196,7 +196,8 @@ forward void GOKZ_DB_OnClientSetup(int client, int steamID, bool cheater);
 forward void GOKZ_DB_OnMapSetup(int mapID);
 
 /**
- * Called when a time has been inserted into the database.
+ * Called when a time has been inserted into the database,
+ * if the player is still in the server.
  *
  * @param client			Client index.
  * @param steamID			SteamID32 of the player (from GetSteamAccountID()).
@@ -215,6 +216,32 @@ forward void GOKZ_DB_OnTimeInserted(
 	int mode, 
 	int style, 
 	int runTimeMS, 
+	int teleportsUsed);
+
+/**
+ * Called when a time has been inserted into the database, even if the
+ * player has left since finishing the run. Use GOKZ_GetClientOfSteamAccountID
+ * to find the client playing as the account now.
+ *
+ * @param steamID			SteamID32 of the player (from GetSteamAccountID()).
+ * @param name				Player's name when they finished the run.
+ * @param cheater			Whether player was marked as a cheater when they finished the run.
+ * @param mapID				MapID from the "Maps" table.
+ * @param course    		Course number e.g. 0=main, 1='bonus1' etc.
+ * @param mode				Player's movement mode.
+ * @param style				Player's movement style.
+ * @param runTimeMS			Player's end time in milliseconds.
+ * @param teleportsUsed		Number of teleports used by player.
+ */
+forward void GOKZ_DB_OnTimeInsertedForAccount(
+	int steamID,
+	const char[] name,
+	bool cheater,
+	int mapID,
+	int course,
+	int mode,
+	int style,
+	int runTimeMS,
 	int teleportsUsed);
 
 /**
