@@ -5,13 +5,13 @@
 
 
 
-void DB_ProcessNewTime(int client, int steamID, int mapID, int course, int mode, int style, int runTimeMS, int teleportsUsed)
+void DB_ProcessNewTime(int steamID, const char[] name, int mapID, int course, int mode, int style, int runTimeMS, int teleportsUsed)
 {
 	char query[1024];
 	
 	DataPack data = new DataPack();
-	data.WriteCell(GetClientUserId(client));
 	data.WriteCell(steamID);
+	data.WriteString(name);
 	data.WriteCell(mapID);
 	data.WriteCell(course);
 	data.WriteCell(mode);
@@ -49,9 +49,11 @@ void DB_ProcessNewTime(int client, int steamID, int mapID, int course, int mode,
 
 public void DB_TxnSuccess_ProcessTimerEnd(Handle db, DataPack data, int numQueries, Handle[] results, any[] queryData)
 {
+	char name[MAX_NAME_LENGTH];
+
 	data.Reset();
-	int client = GetClientOfUserId(data.ReadCell());
 	int steamID = data.ReadCell();
+	data.ReadString(name, sizeof(name));
 	int mapID = data.ReadCell();
 	int course = data.ReadCell();
 	int mode = data.ReadCell();
@@ -59,11 +61,6 @@ public void DB_TxnSuccess_ProcessTimerEnd(Handle db, DataPack data, int numQueri
 	int runTimeMS = data.ReadCell();
 	int teleportsUsed = data.ReadCell();
 	delete data;
-	
-	if (!IsValidClient(client))
-	{
-		return;
-	}
 	
 	bool firstTime = SQL_GetRowCount(results[0]) == 1;
 	int pbDiff = 0;
@@ -120,38 +117,56 @@ public void DB_TxnSuccess_ProcessTimerEnd(Handle db, DataPack data, int numQueri
 		maxRankPro = SQL_FetchInt(results[5], 0);
 	}
 	
+	// The player may have left or reconnected since finishing
+	int client = GOKZ_GetClientOfSteamAccountID(steamID);
+	bool currentMap = mapID == GOKZ_DB_GetCurrentMapID();
+
+	if (currentMap)
+	{
+		AnnounceNewTime(name, course, mode, GOKZ_DB_TimeIntToFloat(runTimeMS), teleportsUsed, firstTime, GOKZ_DB_TimeIntToFloat(pbDiff), rank, maxRank, firstTimePro, GOKZ_DB_TimeIntToFloat(pbDiffPro), rankPro, maxRankPro);
+	}
+
 	// Call OnTimeProcessed forward
-	Call_OnTimeProcessed(
-		client, 
-		steamID, 
-		mapID, 
-		course, 
-		mode, 
-		style, 
-		GOKZ_DB_TimeIntToFloat(runTimeMS), 
-		teleportsUsed, 
-		firstTime, 
-		GOKZ_DB_TimeIntToFloat(pbDiff), 
-		rank, 
-		maxRank, 
-		firstTimePro, 
-		GOKZ_DB_TimeIntToFloat(pbDiffPro), 
-		rankPro, 
-		maxRankPro);
+	if (client != 0)
+	{
+		Call_OnTimeProcessed(
+			client,
+			steamID,
+			mapID,
+			course,
+			mode,
+			style,
+			GOKZ_DB_TimeIntToFloat(runTimeMS),
+			teleportsUsed,
+			firstTime,
+			GOKZ_DB_TimeIntToFloat(pbDiff),
+			rank,
+			maxRank,
+			firstTimePro,
+			GOKZ_DB_TimeIntToFloat(pbDiffPro),
+			rankPro,
+			maxRankPro);
+	}
 	
-	// Call OnNewRecord forward
 	bool newWR = (firstTime || pbDiff < 0) && rank == 1;
 	bool newWRPro = (firstTimePro || pbDiffPro < 0) && rankPro == 1;
-	if (newWR && newWRPro)
+	if (!newWR && !newWRPro)
 	{
-		Call_OnNewRecord(client, steamID, mapID, course, mode, style, RecordType_NubAndPro, GOKZ_DB_TimeIntToFloat(pbDiffPro), teleportsUsed);
+		return;
 	}
-	else if (newWR)
+
+	int recordType = newWR && newWRPro ? RecordType_NubAndPro : (newWR ? RecordType_Nub : RecordType_Pro);
+	int recordPBDiff = newWRPro ? pbDiffPro : pbDiff;
+
+	if (currentMap)
 	{
-		Call_OnNewRecord(client, steamID, mapID, course, mode, style, RecordType_Nub, GOKZ_DB_TimeIntToFloat(pbDiff), teleportsUsed);
+		AnnounceNewRecord(name, course, mode, recordType);
+		DB_CacheRecords(mapID);
 	}
-	else if (newWRPro)
+
+	// Call OnNewRecord forward
+	if (client != 0)
 	{
-		Call_OnNewRecord(client, steamID, mapID, course, mode, style, RecordType_Pro, GOKZ_DB_TimeIntToFloat(pbDiffPro), teleportsUsed);
+		Call_OnNewRecord(client, steamID, mapID, course, mode, style, recordType, GOKZ_DB_TimeIntToFloat(recordPBDiff), teleportsUsed);
 	}
 } 
