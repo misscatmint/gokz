@@ -2,6 +2,7 @@
 
 #include <sdkhooks>
 #include <gokz/core>
+#include <gokz/srs>
 #include <gokz/hud>
 
 #undef REQUIRE_EXTENSIONS
@@ -21,7 +22,7 @@ public Plugin myinfo =
 	name = "GOKZ HUD", 
 	author = "DanZay", 
 	description = "Provides HUD and UI features", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 

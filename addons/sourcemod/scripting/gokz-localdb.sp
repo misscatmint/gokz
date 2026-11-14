@@ -3,6 +3,7 @@
 #include <geoip>
 
 #include <gokz/core>
+#include <gokz/srs>
 #include <gokz/localdb>
 
 #undef REQUIRE_EXTENSIONS
@@ -19,7 +20,7 @@ public Plugin myinfo =
 	name = "GOKZ Local DB", 
 	author = "DanZay", 
 	description = "Provides database for players, maps, courses and times", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 

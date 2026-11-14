@@ -5,6 +5,7 @@
 #include <sdktools>
 
 #include <gokz/core>
+#include <gokz/srs>
 #include <gokz/jumpstats>
 
 #undef REQUIRE_EXTENSIONS
@@ -23,7 +24,7 @@ public Plugin myinfo =
 	name = "GOKZ Jumpstats", 
 	author = "DanZay", 
 	description = "Tracks and outputs movement statistics", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 

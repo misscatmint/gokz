@@ -4,6 +4,7 @@
 #include <clientprefs>
 
 #include <gokz/core>
+#include <gokz/srs>
 #include <gokz/jumpbeam>
 
 #undef REQUIRE_EXTENSIONS
@@ -21,7 +22,7 @@ public Plugin myinfo =
 	name = "GOKZ Jump Beam", 
 	author = "DanZay", 
 	description = "Provides option to leave behind a trail when in midair", 
-	version = GOKZ_VERSION, 
+	version = GOKZ_SRS_VERSION, 
 	url = GOKZ_SOURCE_URL
 };
 
