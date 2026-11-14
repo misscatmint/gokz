@@ -76,7 +76,7 @@ SELECT MapCourseID \
 // =====[ GENERAL ]=====
 
 char sql_getpb[] = "\
-SELECT Times.RunTime, Times.Teleports \
+SELECT Times.RunTime, Times.Teleports, Times.TimeGUID \
     FROM Times \
     INNER JOIN MapCourses ON MapCourses.MapCourseID=Times.MapCourseID \
     WHERE Times.SteamID32=%d AND MapCourses.MapID=%d \
@@ -85,7 +85,7 @@ SELECT Times.RunTime, Times.Teleports \
     LIMIT %d";
 
 char sql_getpbpro[] = "\
-SELECT Times.RunTime \
+SELECT Times.RunTime, Times.TimeGUID \
     FROM Times \
     INNER JOIN MapCourses ON MapCourses.MapCourseID=Times.MapCourseID \
     WHERE Times.SteamID32=%d AND MapCourses.MapID=%d \
@@ -94,7 +94,7 @@ SELECT Times.RunTime \
     LIMIT %d";
 
 char sql_getmaptop[] = "\
-SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports \
+SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports, t.TimeGUID \
     FROM Times t \
     INNER JOIN MapCourses mc ON mc.MapCourseID=t.MapCourseID \
     INNER JOIN Players p ON p.SteamID32=t.SteamID32 \
@@ -104,8 +104,21 @@ SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports \
     ORDER BY PBTime \
     LIMIT %d";
 
+char sql_getmaptopreplays[] = "\
+SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports, t.TimeGUID \
+    FROM Times t \
+    INNER JOIN MapCourses mc ON mc.MapCourseID=t.MapCourseID \
+    INNER JOIN Players p ON p.SteamID32=t.SteamID32 \
+    LEFT OUTER JOIN Times t2 ON t2.SteamID32=t.SteamID32 \
+    AND t2.MapCourseID=t.MapCourseID AND t2.Mode=t.Mode AND t2.RunTime<t.RunTime \
+    AND t2.TimeGUID IS NOT NULL \
+    WHERE t2.TimeID IS NULL AND p.Cheater=0 AND mc.MapID=%d AND mc.Course=%d AND t.Mode=%d \
+    AND t.TimeGUID IS NOT NULL \
+    ORDER BY PBTime \
+    LIMIT %d";
+
 char sql_getmaptoppro[] = "\
-SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports \
+SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports, t.TimeGUID \
     FROM Times t \
     INNER JOIN MapCourses mc ON mc.MapCourseID=t.MapCourseID \
     INNER JOIN Players p ON p.SteamID32=t.SteamID32 \
@@ -113,6 +126,20 @@ SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports \
     AND t2.Mode=t.Mode AND t2.RunTime<t.RunTime AND t.Teleports=0 AND t2.Teleports=0 \
     WHERE t2.TimeID IS NULL AND p.Cheater=0 AND mc.MapID=%d \
     AND mc.Course=%d AND t.Mode=%d AND t.Teleports=0 \
+    ORDER BY PBTime \
+    LIMIT %d";
+
+char sql_getmaptopproreplays[] = "\
+SELECT t.TimeID, t.SteamID32, p.Alias, t.RunTime AS PBTime, t.Teleports, t.TimeGUID \
+    FROM Times t \
+    INNER JOIN MapCourses mc ON mc.MapCourseID=t.MapCourseID \
+    INNER JOIN Players p ON p.SteamID32=t.SteamID32 \
+    LEFT OUTER JOIN Times t2 ON t2.SteamID32=t.SteamID32 AND t2.MapCourseID=t.MapCourseID \
+    AND t2.Mode=t.Mode AND t2.RunTime<t.RunTime AND t.Teleports=0 AND t2.Teleports=0 \
+    AND t2.TimeGUID IS NOT NULL \
+    WHERE t2.TimeID IS NULL AND p.Cheater=0 AND mc.MapID=%d \
+    AND mc.Course=%d AND t.Mode=%d AND t.Teleports=0 \
+    AND t.TimeGUID IS NOT NULL \
     ORDER BY PBTime \
     LIMIT %d";
 

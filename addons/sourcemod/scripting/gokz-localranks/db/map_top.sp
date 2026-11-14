@@ -11,12 +11,13 @@ static char mapTopMap[MAXPLAYERS + 1][64];
 static int mapTopMapID[MAXPLAYERS + 1];
 static int mapTopCourse[MAXPLAYERS + 1];
 static int mapTopMode[MAXPLAYERS + 1];
+static bool mapTopWithReplays[MAXPLAYERS + 1];
 
 
 
 // =====[ MAP TOP MODE ]=====
 
-void DB_OpenMapTopModeMenu(int client, int mapID, int course)
+void DB_OpenMapTopModeMenu(int client, int mapID, int course, bool withReplays)
 {
 	char query[1024];
 	
@@ -24,6 +25,7 @@ void DB_OpenMapTopModeMenu(int client, int mapID, int course)
 	data.WriteCell(GetClientUserId(client));
 	data.WriteCell(mapID);
 	data.WriteCell(course);
+	data.WriteCell(withReplays);
 	
 	Transaction txn = SQL_CreateTransaction();
 	
@@ -43,6 +45,7 @@ public void DB_TxnSuccess_OpenMapTopModeMenu(Handle db, DataPack data, int numQu
 	int client = GetClientOfUserId(data.ReadCell());
 	int mapID = data.ReadCell();
 	int course = data.ReadCell();
+	bool withReplays = data.ReadCell();
 	delete data;
 	
 	if (!IsValidClient(client))
@@ -71,6 +74,7 @@ public void DB_TxnSuccess_OpenMapTopModeMenu(Handle db, DataPack data, int numQu
 	
 	mapTopMapID[client] = mapID;
 	mapTopCourse[client] = course;
+	mapTopWithReplays[client] = withReplays;
 	DisplayMapTopModeMenu(client);
 }
 
@@ -105,7 +109,7 @@ public void DB_TxnSuccess_OpenMapTopModeMenu_FindMap(Handle db, DataPack data, i
 	}
 	else if (SQL_FetchRow(results[0]))
 	{  // Result is the MapID
-		DB_OpenMapTopModeMenu(client, SQL_FetchInt(results[0], 0), course);
+		DB_OpenMapTopModeMenu(client, SQL_FetchInt(results[0], 0), course, false);
 	}
 }
 
@@ -113,7 +117,7 @@ public void DB_TxnSuccess_OpenMapTopModeMenu_FindMap(Handle db, DataPack data, i
 
 // =====[ MAP TOP ]=====
 
-void DB_OpenMapTop(int client, int mapID, int course, int mode, int timeType)
+void DB_OpenMapTop(int client, int mapID, int course, int mode, int timeType, bool withReplays)
 {
 	char query[1024];
 	
@@ -122,6 +126,7 @@ void DB_OpenMapTop(int client, int mapID, int course, int mode, int timeType)
 	data.WriteCell(course);
 	data.WriteCell(mode);
 	data.WriteCell(timeType);
+	data.WriteCell(withReplays);
 	
 	Transaction txn = SQL_CreateTransaction();
 	
@@ -135,8 +140,8 @@ void DB_OpenMapTop(int client, int mapID, int course, int mode, int timeType)
 	// Get top times for each time type
 	switch (timeType)
 	{
-		case TimeType_Nub:FormatEx(query, sizeof(query), sql_getmaptop, mapID, course, mode, LR_MAP_TOP_CUTOFF);
-		case TimeType_Pro:FormatEx(query, sizeof(query), sql_getmaptoppro, mapID, course, mode, LR_MAP_TOP_CUTOFF);
+		case TimeType_Nub:FormatEx(query, sizeof(query), withReplays ? sql_getmaptopreplays : sql_getmaptop, mapID, course, mode, LR_MAP_TOP_CUTOFF);
+		case TimeType_Pro:FormatEx(query, sizeof(query), withReplays ? sql_getmaptopproreplays : sql_getmaptoppro, mapID, course, mode, LR_MAP_TOP_CUTOFF);
 	}
 	txn.AddQuery(query);
 	
@@ -150,6 +155,7 @@ public void DB_TxnSuccess_OpenMapTop(Handle db, DataPack data, int numQueries, H
 	int course = data.ReadCell();
 	int mode = data.ReadCell();
 	int timeType = data.ReadCell();
+	bool withReplays = data.ReadCell();
 	delete data;
 	
 	if (!IsValidClient(client))
@@ -185,7 +191,7 @@ public void DB_TxnSuccess_OpenMapTop(Handle db, DataPack data, int numQueries, H
 			case TimeType_Nub:GOKZ_PrintToChat(client, true, "%t", "No Times Found");
 			case TimeType_Pro:GOKZ_PrintToChat(client, true, "%t", "No Times Found (PRO)");
 		}
-		DisplayMapTopMenu(client, mode);
+		DisplayMapTopMenu(client, mode, withReplays);
 		return;
 	}
 
@@ -195,12 +201,12 @@ public void DB_TxnSuccess_OpenMapTop(Handle db, DataPack data, int numQueries, H
 	// Set submenu title
 	if (course == 0)
 	{
-		menu.SetTitle("%T", "Map Top Submenu - Title", client, 
+		menu.SetTitle("%T", withReplays ? "Map Top Submenu - Title (Replays)" : "Map Top Submenu - Title", client, 
 			LR_MAP_TOP_CUTOFF, gC_TimeTypeNames[timeType], mapName, gC_ModeNames[mode]);
 	}
 	else
 	{
-		menu.SetTitle("%T", "Map Top Submenu - Title (Bonus)", client, 
+		menu.SetTitle("%T", withReplays ? "Map Top Submenu - Title (Bonus) (Replays)" : "Map Top Submenu - Title (Bonus)", client, 
 			LR_MAP_TOP_CUTOFF, gC_TimeTypeNames[timeType], mapName, course, gC_ModeNames[mode]);
 	}
 	
@@ -209,6 +215,7 @@ public void DB_TxnSuccess_OpenMapTop(Handle db, DataPack data, int numQueries, H
 	char playerName[MAX_NAME_LENGTH];
 	float runTime;
 	int timeid, steamid, teleports, rank = 0;
+	char guid[GOKZ_DB_TIME_GUID_MAX], replayPath[PLATFORM_MAX_PATH];
 
 	bool clientIsAdmin = CheckCommandAccess(client, "sm_deletetime", ADMFLAG_ROOT, false);
 
@@ -225,6 +232,7 @@ public void DB_TxnSuccess_OpenMapTop(Handle db, DataPack data, int numQueries, H
 		steamid = SQL_FetchInt(results[2], 1);
 		SQL_FetchString(results[2], 2, playerName, sizeof(playerName));
 		runTime = GOKZ_DB_TimeIntToFloat(SQL_FetchInt(results[2], 3));
+		SQL_FetchString(results[2], 5, guid, sizeof(guid));
 
 		if (clientIsAdmin)
 		{
@@ -251,7 +259,23 @@ public void DB_TxnSuccess_OpenMapTop(Handle db, DataPack data, int numQueries, H
 					rank, GOKZ_FormatTime(runTime), playerName, steamid & 1, steamid >> 1, admin);
 			}
 		}
-		menu.AddItem("", display, ITEMDRAW_DISABLED);
+		
+		if (guid[0] != 0)
+		{
+			GOKZ_RP_FormatRunReplayPath(replayPath, sizeof(replayPath), guid);
+			if (FileExists(replayPath))
+			{
+				menu.AddItem(replayPath, display, ITEMDRAW_DEFAULT);
+			}
+			else
+			{
+				menu.AddItem("", display, ITEMDRAW_DISABLED);
+			}
+		}
+		else
+		{
+			menu.AddItem("", display, ITEMDRAW_DISABLED);
+		}
 	}
 	
 	menu.Display(client, MENU_TIME_FOREVER);
@@ -273,34 +297,35 @@ static void MapTopModeMenuSetTitle(int client, Menu menu)
 {
 	if (mapTopCourse[client] == 0)
 	{
-		menu.SetTitle("%T", "Map Top Mode Menu - Title", client, mapTopMap[client]);
+		menu.SetTitle("%T", mapTopWithReplays[client] ? "Map Top Mode Menu - Title (Replays)" : "Map Top Mode Menu - Title", client, mapTopMap[client]);
 	}
 	else
 	{
-		menu.SetTitle("%T", "Map Top Mode Menu - Title (Bonus)", client, mapTopMap[client], mapTopCourse[client]);
+		menu.SetTitle("%T", mapTopWithReplays[client] ? "Map Top Mode Menu - Title (Bonus) (Replays)" : "Map Top Mode Menu - Title (Bonus)", client, mapTopMap[client], mapTopCourse[client]);
 	}
 }
 
-void DisplayMapTopMenu(int client, int mode)
+void DisplayMapTopMenu(int client, int mode, bool withReplays)
 {
 	mapTopMode[client] = mode;
+	mapTopWithReplays[client] = withReplays;
 	
 	Menu menu = new Menu(MenuHandler_MapTop);
 	if (mapTopCourse[client] == 0)
 	{
-		menu.SetTitle("%T", "Map Top Menu - Title", client, 
+		menu.SetTitle("%T", withReplays ? "Map Top Menu - Title (Replays)" : "Map Top Menu - Title", client, 
 			mapTopMap[client], gC_ModeNames[mapTopMode[client]]);
 	}
 	else
 	{
-		menu.SetTitle("%T", "Map Top Menu - Title (Bonus)", client, 
+		menu.SetTitle("%T", withReplays ? "Map Top Menu - Title (Bonus) (Replays)" : "Map Top Menu - Title (Bonus)", client, 
 			mapTopMap[client], mapTopCourse[client], gC_ModeNames[mapTopMode[client]]);
 	}
-	MapTopMenuAddItems(client, menu);
+	MapTopMenuAddItems(client, menu, withReplays);
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-static void MapTopMenuAddItems(int client, Menu menu)
+static void MapTopMenuAddItems(int client, Menu menu, bool withReplays)
 {
 	char display[32];
 	for (int i = 0; i < TIMETYPE_COUNT; i++)
@@ -308,7 +333,7 @@ static void MapTopMenuAddItems(int client, Menu menu)
 		FormatEx(display, sizeof(display), "%T", "Map Top Menu - Top", client, LR_MAP_TOP_CUTOFF, gC_TimeTypeNames[i]);
 		menu.AddItem(IntToStringEx(i), display);
 	}
-	if (gB_GOKZGlobal)
+	if (gB_GOKZGlobal && !withReplays)
 	{
 		FormatEx(display, sizeof(display), "%T", "Map Top Menu - Global Top", client, gC_TimeTypeNames[TimeType_Nub]);
 		menu.AddItem(ITEM_INFO_GLOBAL_TOP_NUB, display);
@@ -320,7 +345,7 @@ static void MapTopMenuAddItems(int client, Menu menu)
 
 void ReopenMapTopMenu(int client)
 {
-	DisplayMapTopMenu(client, mapTopMode[client]);
+	DisplayMapTopMenu(client, mapTopMode[client], mapTopWithReplays[client]);
 }
 
 
@@ -332,7 +357,7 @@ public int MenuHandler_MapTopMode(Menu menu, MenuAction action, int param1, int 
 	if (action == MenuAction_Select)
 	{
 		// param1 = client, param2 = mode
-		DisplayMapTopMenu(param1, param2);
+		DisplayMapTopMenu(param1, param2, mapTopWithReplays[param1]);
 	}
 	else if (action == MenuAction_End)
 	{
@@ -359,7 +384,7 @@ public int MenuHandler_MapTop(Menu menu, MenuAction action, int param1, int para
 		else
 		{
 			int timeType = StringToInt(info);
-			DB_OpenMapTop(param1, mapTopMapID[param1], mapTopCourse[param1], mapTopMode[param1], timeType);
+			DB_OpenMapTop(param1, mapTopMapID[param1], mapTopCourse[param1], mapTopMode[param1], timeType, mapTopWithReplays[param1]);
 		}
 	}
 	else if (action == MenuAction_Cancel && param2 == MenuCancel_Exit)
@@ -375,8 +400,13 @@ public int MenuHandler_MapTop(Menu menu, MenuAction action, int param1, int para
 
 public int MenuHandler_MapTopSubmenu(Menu menu, MenuAction action, int param1, int param2)
 {
-	// TODO Menu item info is player's SteamID32, but is currently not used
-	if (action == MenuAction_Cancel && param2 == MenuCancel_Exit)
+	if (action == MenuAction_Select)
+	{
+		char replayPath[PLATFORM_MAX_PATH];
+		menu.GetItem(param2, replayPath, sizeof(replayPath));
+		GOKZ_RP_LoadJumpReplay(param1, replayPath);
+	}
+	else if (action == MenuAction_Cancel && param2 == MenuCancel_Exit)
 	{
 		ReopenMapTopMenu(param1);
 	}
